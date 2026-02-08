@@ -1127,13 +1127,13 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
-"@excalidraw/common@0.18.0", "@excalidraw/common@file:C:\\Users\\alaee\\Documents\\Projects\\note\\packages\\common":
+"@excalidraw/common@0.18.0", "@excalidraw/common@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\packages\\common":
   version "0.18.0"
   resolved "file:packages/common"
   dependencies:
     tinycolor2 "1.6.0"
 
-"@excalidraw/element@0.18.0", "@excalidraw/element@file:C:\\Users\\alaee\\Documents\\Projects\\note\\packages\\element":
+"@excalidraw/element@0.18.0", "@excalidraw/element@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\packages\\element":
   version "0.18.0"
   resolved "file:packages/element"
   dependencies:
@@ -1145,7 +1145,7 @@
   resolved "https://registry.npmmirror.com/@excalidraw/eslint-config/-/eslint-config-1.0.3.tgz"
   integrity sha512-GemHNF5Z6ga0BWBSX7GJaNBUchLu6RwTcAB84eX1MeckRNhNasAsPCdelDlFalz27iS4RuYEQh0bPE8SRxJgbQ==
 
-"@excalidraw/excalidraw@*", "@excalidraw/excalidraw@file:C:\\Users\\alaee\\Documents\\Projects\\note\\packages\\excalidraw":
+"@excalidraw/excalidraw@*", "@excalidraw/excalidraw@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\packages\\excalidraw":
   version "0.18.0"
   resolved "file:packages/excalidraw"
   dependencies:
@@ -1193,7 +1193,7 @@
   resolved "https://registry.npmmirror.com/@excalidraw/markdown-to-text/-/markdown-to-text-0.1.2.tgz"
   integrity sha512-1nDXBNAojfi3oSFwJswKREkFm5wrSjqay81QlyRv2pkITG/XYB5v+oChENVBQLcxQwX4IUATWvXM5BcaNhPiIg==
 
-"@excalidraw/math@0.18.0", "@excalidraw/math@file:C:\\Users\\alaee\\Documents\\Projects\\note\\packages\\math":
+"@excalidraw/math@0.18.0", "@excalidraw/math@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\packages\\math":
   version "0.18.0"
   resolved "file:packages/math"
   dependencies:
@@ -1224,7 +1224,7 @@
   resolved "https://registry.npmmirror.com/@excalidraw/random-username/-/random-username-1.1.0.tgz"
   integrity sha512-nULYsQxkWHnbmHvcs+efMkJ4/9TtvNyFeLyHdeGxW0zHs6P+jYVqcRff9A6Vq9w9JXeDRnRh2VKvTtS19GW2qA==
 
-"@excalidraw/utils@file:C:\\Users\\alaee\\Documents\\Projects\\note\\packages\\utils":
+"@excalidraw/utils@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\packages\\utils":
   version "0.1.2"
   resolved "file:packages/utils"
   dependencies:
@@ -2690,14 +2690,7 @@
   resolved "https://registry.npmmirror.com/@types/lodash/-/lodash-4.17.16.tgz"
   integrity sha512-HX7Em5NYQAXKW+1T+FiuG27NGwzJfCX3s1GjOa7ujxZa52kjJLOr4FUxT+giF6Tgxv1e+/czV/iTtBw27WTU9g==
 
-"@types/node@*", "@types/node@>=12.12.47", "@types/node@>=13.7.0":
-  version "22.13.8"
-  resolved "https://registry.npmmirror.com/@types/node/-/node-22.13.8.tgz"
-  integrity sha512-G3EfaZS+iOGYWLLRCEAXdWK9my08oHNZ+FHluRiggIYJPOXzhOiDgpVCUHaUvyIC5/fj7C/p637jdzC666AOKQ==
-  dependencies:
-    undici-types "~6.20.0"
-
-"@types/node@^20":
+"@types/node@*", "@types/node@^20", "@types/node@>=12.12.47", "@types/node@>=13.7.0":
   version "20.17.22"
   resolved "https://registry.npmmirror.com/@types/node/-/node-20.17.22.tgz"
   integrity sha512-9RV2zST+0s3EhfrMZIhrz2bhuhBwxgkbHEwP2gtGWPjBzVQjifMzJ9exw7aDZhR1wbpj8zBrfp3bo8oJcGiUUw==
@@ -5221,7 +5214,7 @@ events@^3.2.0:
   resolved "https://registry.npmmirror.com/events/-/events-3.3.0.tgz"
   integrity sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==
 
-"excalidraw-app@file:C:\\Users\\alaee\\Documents\\Projects\\note\\excalidraw-app":
+"excalidraw-app@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\excalidraw-app":
   version "1.0.0"
   resolved "file:excalidraw-app"
   dependencies:
@@ -8252,7 +8245,7 @@ source-map-support@~0.5.20:
     buffer-from "^1.0.0"
     source-map "^0.6.0"
 
-source-map@^0.6.0, source-map@~0.6.0:
+source-map@^0.6.0:
   version "0.6.1"
   resolved "https://registry.npmmirror.com/source-map/-/source-map-0.6.1.tgz"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
@@ -8263,6 +8256,11 @@ source-map@^0.8.0-beta.0:
   integrity sha512-2ymg6oRBpebeZi9UUNsgQ89bhx01TcTkmNTGnNO88imTmbSgy4nfujrgVEFKWpMTEGA11EDkTt7mqObTPdigIA==
   dependencies:
     whatwg-url "^7.0.0"
+
+source-map@~0.6.0:
+  version "0.6.1"
+  resolved "https://registry.npmmirror.com/source-map/-/source-map-0.6.1.tgz"
+  integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
 sourcemap-codec@^1.4.8:
   version "1.4.8"
@@ -8872,11 +8870,6 @@ undici-types@~6.19.2:
   resolved "https://registry.npmmirror.com/undici-types/-/undici-types-6.19.8.tgz"
   integrity sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==
 
-undici-types@~6.20.0:
-  version "6.20.0"
-  resolved "https://registry.npmmirror.com/undici-types/-/undici-types-6.20.0.tgz"
-  integrity sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==
-
 unicode-canonical-property-names-ecmascript@^2.0.0:
   version "2.0.1"
   resolved "https://registry.npmmirror.com/unicode-canonical-property-names-ecmascript/-/unicode-canonical-property-names-ecmascript-2.0.1.tgz"
@@ -9411,7 +9404,7 @@ why-is-node-running@^2.3.0:
     siginfo "^2.0.0"
     stackback "0.0.2"
 
-"with-nextjs@file:C:\\Users\\alaee\\Documents\\Projects\\note\\examples\\with-nextjs":
+"with-nextjs@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\examples\\with-nextjs":
   version "0.1.0"
   resolved "file:examples/with-nextjs"
   dependencies:
@@ -9419,7 +9412,7 @@ why-is-node-running@^2.3.0:
     react "19.0.0"
     react-dom "19.0.0"
 
-"with-script-in-browser@file:C:\\Users\\alaee\\Documents\\Projects\\note\\examples\\with-script-in-browser":
+"with-script-in-browser@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\examples\\with-script-in-browser":
   version "1.0.0"
   resolved "file:examples/with-script-in-browser"
   dependencies:
@@ -9498,10 +9491,22 @@ workbox-cacheable-response@7.3.0:
   dependencies:
     workbox-core "7.3.0"
 
+workbox-cacheable-response@7.4.0:
+  version "7.4.0"
+  resolved "https://registry.npmmirror.com/workbox-cacheable-response/-/workbox-cacheable-response-7.4.0.tgz"
+  integrity sha512-0Fb8795zg/x23ISFkAc7lbWes6vbw34DGFIMw31cwuHPgDEC/5EYm6m/ZkylLX0EnEbbOyOCLjKgFS/Z5g0HeQ==
+  dependencies:
+    workbox-core "7.4.0"
+
 workbox-core@7.3.0:
   version "7.3.0"
   resolved "https://registry.npmmirror.com/workbox-core/-/workbox-core-7.3.0.tgz"
   integrity sha512-Z+mYrErfh4t3zi7NVTvOuACB0A/jA3bgxUN3PwtAVHvfEsZxV9Iju580VEETug3zYJRc0Dmii/aixI/Uxj8fmw==
+
+workbox-core@7.4.0:
+  version "7.4.0"
+  resolved "https://registry.npmmirror.com/workbox-core/-/workbox-core-7.4.0.tgz"
+  integrity sha512-6BMfd8tYEnN4baG4emG9U0hdXM4gGuDU3ectXuVHnj71vwxTFI7WOpQJC4siTOlVtGqCUtj0ZQNsrvi6kZZTAQ==
 
 workbox-expiration@7.3.0:
   version "7.3.0"
@@ -9510,6 +9515,14 @@ workbox-expiration@7.3.0:
   dependencies:
     idb "^7.0.1"
     workbox-core "7.3.0"
+
+workbox-expiration@7.4.0:
+  version "7.4.0"
+  resolved "https://registry.npmmirror.com/workbox-expiration/-/workbox-expiration-7.4.0.tgz"
+  integrity sha512-V50p4BxYhtA80eOvulu8xVfPBgZbkxJ1Jr8UUn0rvqjGhLDqKNtfrDfjJKnLz2U8fO2xGQJTx/SKXNTzHOjnHw==
+  dependencies:
+    idb "^7.0.1"
+    workbox-core "7.4.0"
 
 workbox-google-analytics@7.3.0:
   version "7.3.0"
@@ -9537,6 +9550,15 @@ workbox-precaching@7.3.0:
     workbox-routing "7.3.0"
     workbox-strategies "7.3.0"
 
+workbox-precaching@7.4.0:
+  version "7.4.0"
+  resolved "https://registry.npmmirror.com/workbox-precaching/-/workbox-precaching-7.4.0.tgz"
+  integrity sha512-VQs37T6jDqf1rTxUJZXRl3yjZMf5JX/vDPhmx2CPgDDKXATzEoqyRqhYnRoxl6Kr0rqaQlp32i9rtG5zTzIlNg==
+  dependencies:
+    workbox-core "7.4.0"
+    workbox-routing "7.4.0"
+    workbox-strategies "7.4.0"
+
 workbox-range-requests@7.3.0:
   version "7.3.0"
   resolved "https://registry.npmmirror.com/workbox-range-requests/-/workbox-range-requests-7.3.0.tgz"
@@ -9563,12 +9585,26 @@ workbox-routing@7.3.0:
   dependencies:
     workbox-core "7.3.0"
 
+workbox-routing@7.4.0:
+  version "7.4.0"
+  resolved "https://registry.npmmirror.com/workbox-routing/-/workbox-routing-7.4.0.tgz"
+  integrity sha512-C/ooj5uBWYAhAqwmU8HYQJdOjjDKBp9MzTQ+otpMmd+q0eF59K+NuXUek34wbL0RFrIXe/KKT+tUWcZcBqxbHQ==
+  dependencies:
+    workbox-core "7.4.0"
+
 workbox-strategies@7.3.0:
   version "7.3.0"
   resolved "https://registry.npmmirror.com/workbox-strategies/-/workbox-strategies-7.3.0.tgz"
   integrity sha512-tmZydug+qzDFATwX7QiEL5Hdf7FrkhjaF9db1CbB39sDmEZJg3l9ayDvPxy8Y18C3Y66Nrr9kkN1f/RlkDgllg==
   dependencies:
     workbox-core "7.3.0"
+
+workbox-strategies@7.4.0:
+  version "7.4.0"
+  resolved "https://registry.npmmirror.com/workbox-strategies/-/workbox-strategies-7.4.0.tgz"
+  integrity sha512-T4hVqIi5A4mHi92+5EppMX3cLaVywDp8nsyUgJhOZxcfSV/eQofcOA6/EMo5rnTNmNTpw0rUgjAI6LaVullPpg==
+  dependencies:
+    workbox-core "7.4.0"
 
 workbox-streams@7.3.0:
   version "7.3.0"

@@ -1,15 +1,15 @@
-<a href="https://excalidraw.com/" target="_blank" rel="noopener">
+<a href="#" target="_blank" rel="noopener">
   <picture>
-    <source media="(prefers-color-scheme: dark)" alt="Excalidraw" srcset="https://excalidraw.nyc3.cdn.digitaloceanspaces.com/github/excalidraw_github_cover_2_dark.png" />
-    <img alt="Excalidraw" src="https://excalidraw.nyc3.cdn.digitaloceanspaces.com/github/excalidraw_github_cover_2.png" />
+    <source media="(prefers-color-scheme: dark)" alt="Aladdin Notes" srcset="https://excalidraw.nyc3.cdn.digitaloceanspaces.com/github/excalidraw_github_cover_2_dark.png" />
+    <img alt="Aladdin Notes" src="https://excalidraw.nyc3.cdn.digitaloceanspaces.com/github/excalidraw_github_cover_2.png" />
   </picture>
 </a>
 
 <h4 align="center">
-  <a href="https://excalidraw.com">Excalidraw Editor</a> |
-  <a href="https://plus.excalidraw.com/blog">Blog</a> |
-  <a href="https://docs.excalidraw.com">Documentation</a> |
-  <a href="https://plus.excalidraw.com">Excalidraw+</a>
+  <a href="#">Aladdin Notes Editor</a> |
+  <a href="#">Blog</a> |
+  <a href="#">Documentation</a> |
+  <a href="#">Aladdin Notes+</a>
 </h4>
 
 <div align="center">
@@ -23,7 +23,7 @@
 <br />
 <p align="center">
   <a href="https://github.com/excalidraw/excalidraw/blob/master/LICENSE">
-    <img alt="Excalidraw is released under the MIT license." src="https://img.shields.io/badge/license-MIT-blue.svg"  /></a>
+    <img alt="Aladdin Notes is released under the MIT license." src="https://img.shields.io/badge/license-MIT-blue.svg"  /></a>
   <a href="https://www.npmjs.com/package/@excalidraw/excalidraw">
     <img alt="npm downloads/month" src="https://img.shields.io/npm/dm/@excalidraw/excalidraw"  /></a>
   <a href="https://docs.excalidraw.com/docs/introduction/contributing">
@@ -33,7 +33,7 @@
   <a href="https://deepwiki.com/excalidraw/excalidraw">
     <img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg" /></a>
   <a href="https://twitter.com/excalidraw">
-    <img alt="Follow Excalidraw on Twitter" src="https://img.shields.io/twitter/follow/excalidraw.svg?label=follow+@excalidraw&style=social&logo=twitter"/></a>
+    <img alt="Follow Aladdin Notes on Twitter" src="https://img.shields.io/twitter/follow/aladdinnotes.svg?label=follow+@aladdinnotes&style=social&logo=twitter"/></a>
 </p>
 
 <div align="center">
