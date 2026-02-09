@@ -9,6 +9,7 @@ import {
   deleteDrawing,
   renameDrawing,
   moveDrawing,
+  resolveFolderPath,
 } from "../data/drawingStorage";
 import { getCurrentUser, logout } from "../data/authService";
 
@@ -72,6 +73,47 @@ const LogOutIcon = () => (
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
+const HomeIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: "0.875rem", height: "0.875rem" }}>
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+const GridIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+  </svg>
+);
+const ListIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
+);
+
+type ViewMode = "grid" | "list";
+type CardSize = "small" | "medium" | "large";
+
+const getStoredViewPrefs = (): { viewMode: ViewMode; cardSize: CardSize } => {
+  try {
+    const stored = localStorage.getItem("aladdin-view-prefs");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        viewMode: parsed.viewMode || "grid",
+        cardSize: parsed.cardSize || "medium",
+      };
+    }
+  } catch { /* ignore */ }
+  return { viewMode: "grid", cardSize: "medium" };
+};
+
+const storeViewPrefs = (viewMode: ViewMode, cardSize: CardSize) => {
+  try {
+    localStorage.setItem("aladdin-view-prefs", JSON.stringify({ viewMode, cardSize }));
+  } catch { /* ignore */ }
+};
 
 // Context Menu
 type ContextMenuProps = {
@@ -165,25 +207,33 @@ const MoveModal = ({ drawingName, folders, currentFolderId, onMove, onCancel }: 
 
 // Main
 type NotesDashboardProps = {
-  onNewDrawing: (folderId: string) => void;
-  onOpenDrawing: (drawing: DrawingDocument) => void;
+  folderPath: string[];
+  onNewDrawing: (folderId: string, folderPath: string[]) => void;
+  onOpenDrawing: (drawing: DrawingDocument, folderPath: string[]) => void;
   onLogout: () => void;
+  onNavigate: (path: string) => void;
 };
 
-type BreadcrumbItem = { id: string; name: string };
+const buildNotesUrl = (folderPath: string[]) => {
+  if (folderPath.length === 0) {
+    return "/notes";
+  }
+  return "/notes/" + folderPath.map(encodeURIComponent).join("/");
+};
 
-export const NotesDashboard = ({ onNewDrawing, onOpenDrawing, onLogout }: NotesDashboardProps) => {
+export const NotesDashboard = ({ folderPath, onNewDrawing, onOpenDrawing, onLogout, onNavigate }: NotesDashboardProps) => {
   const user = getCurrentUser() as User;
   const [folders, setFolders] = useState<FolderDocument[]>([]);
   const [drawings, setDrawings] = useState<DrawingDocument[]>([]);
   const [allFolders, setAllFolders] = useState<FolderDocument[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState("");
-  const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [contextMenu, setContextMenu] = useState<ContextMenuProps | null>(null);
   const [modal, setModal] = useState<ModalProps | null>(null);
   const [moveModal, setMoveModal] = useState<{ drawing: DrawingDocument } | null>(null);
 
+  // Resolve folder path from URL to folder ID, then load content
+  // Single effect to avoid race condition (flash of root content)
   const loadContent = useCallback(async (folderId: string) => {
     setLoading(true);
     try {
@@ -203,28 +253,61 @@ export const NotesDashboard = ({ onNewDrawing, onOpenDrawing, onLogout }: NotesD
     }
   }, [user.$id]);
 
-  useEffect(() => { loadContent(currentFolderId); }, [currentFolderId, loadContent]);
+  useEffect(() => {
+    let cancelled = false;
+    const resolveAndLoad = async () => {
+      setLoading(true);
+      let folderId = "";
+
+      if (folderPath.length > 0) {
+        try {
+          const resolved = await resolveFolderPath(user.$id, folderPath);
+          if (cancelled) { return; }
+          if (resolved) {
+            folderId = resolved.folderId;
+          } else {
+            // Folder path not found — redirect to root
+            onNavigate("/notes");
+            return;
+          }
+        } catch {
+          if (cancelled) { return; }
+        }
+      }
+
+      setCurrentFolderId(folderId);
+      if (!cancelled) {
+        await loadContent(folderId);
+      }
+    };
+    resolveAndLoad();
+    return () => { cancelled = true; };
+  }, [folderPath.join("/"), user.$id, loadContent]);
 
   const navigateToFolder = (folder: FolderDocument) => {
-    setBreadcrumb((prev) => [...prev, { id: folder.$id, name: folder.name }]);
-    setCurrentFolderId(folder.$id);
+    const newPath = [...folderPath, folder.name];
+    onNavigate(buildNotesUrl(newPath));
   };
   const navigateToBreadcrumb = (index: number) => {
-    if (index < 0) { setBreadcrumb([]); setCurrentFolderId(""); }
-    else { const item = breadcrumb[index]; setBreadcrumb((prev) => prev.slice(0, index + 1)); setCurrentFolderId(item.id); }
+    if (index < 0) {
+      onNavigate("/notes");
+    } else {
+      const newPath = folderPath.slice(0, index + 1);
+      onNavigate(buildNotesUrl(newPath));
+    }
   };
 
   const handleCreateFolder = () => {
     setModal({
       title: "New Folder", placeholder: "Folder name", confirmLabel: "Create",
-      onConfirm: async (name) => { setModal(null); await createFolder(user.$id, name, currentFolderId); loadContent(currentFolderId); },
+      onConfirm: async (name) => { setModal(null); await createFolder(user.$id, name, currentFolderId); await loadContent(currentFolderId); },
       onCancel: () => setModal(null),
     });
   };
   const handleRenameFolder = (folder: FolderDocument) => {
     setModal({
       title: "Rename Folder", defaultValue: folder.name, placeholder: "Folder name", confirmLabel: "Rename",
-      onConfirm: async (name) => { setModal(null); await renameFolder(folder.$id, name); loadContent(currentFolderId); },
+      onConfirm: async (name) => { setModal(null); await renameFolder(folder.$id, name); await loadContent(currentFolderId); },
       onCancel: () => setModal(null),
     });
   };
@@ -293,6 +376,33 @@ export const NotesDashboard = ({ onNewDrawing, onOpenDrawing, onLogout }: NotesD
 
   const handleLogout = () => { logout(); onLogout(); };
   const isEmpty = !loading && folders.length === 0 && drawings.length === 0;
+  const breadcrumb = folderPath;
+
+  // View preferences
+  const [viewMode, setViewMode] = useState<ViewMode>(() => getStoredViewPrefs().viewMode);
+  const [cardSize, setCardSize] = useState<CardSize>(() => getStoredViewPrefs().cardSize);
+
+  const updateViewMode = (mode: ViewMode) => {
+    setViewMode(mode);
+    storeViewPrefs(mode, cardSize);
+  };
+  const updateCardSize = (size: CardSize) => {
+    setCardSize(size);
+    storeViewPrefs(viewMode, size);
+  };
+
+  // Size dropdown
+  const [showSizeDropdown, setShowSizeDropdown] = useState(false);
+  const sizeDropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (sizeDropdownRef.current && !sizeDropdownRef.current.contains(e.target as Node)) {
+        setShowSizeDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
     <div className="an-page nd">
@@ -321,35 +431,73 @@ export const NotesDashboard = ({ onNewDrawing, onOpenDrawing, onLogout }: NotesD
       {/* Toolbar */}
       <div className="nd__toolbar">
         <div className="nd__toolbar-left">
-          {breadcrumb.length > 0 ? (
-            <div className="nd__breadcrumb">
-              <span className="nd__breadcrumb-item" onClick={() => navigateToBreadcrumb(-1)}>My Notes</span>
-              {breadcrumb.map((item, i) => (
-                <span key={item.id} style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                  <span className="nd__breadcrumb-sep"><ChevronRight /></span>
-                  <span className={`nd__breadcrumb-item ${i === breadcrumb.length - 1 ? "nd__breadcrumb-item--active" : ""}`}
-                    onClick={() => i < breadcrumb.length - 1 && navigateToBreadcrumb(i)}>
-                    {item.name}
-                  </span>
+          <div className="nd__breadcrumb">
+            <span className={`nd__breadcrumb-home ${breadcrumb.length === 0 ? "nd__breadcrumb-home--active" : ""}`}
+              onClick={() => navigateToBreadcrumb(-1)} title="Home">
+              <HomeIcon />
+            </span>
+            <span className={`nd__breadcrumb-item ${breadcrumb.length === 0 ? "nd__breadcrumb-item--active" : ""}`}
+              onClick={() => navigateToBreadcrumb(-1)}>My Notes</span>
+            {breadcrumb.map((name, i) => (
+              <span key={`${name}-${i}`} style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                <span className="nd__breadcrumb-sep"><ChevronRight /></span>
+                <span className={`nd__breadcrumb-item ${i === breadcrumb.length - 1 ? "nd__breadcrumb-item--active" : ""}`}
+                  onClick={() => navigateToBreadcrumb(i)}>
+                  {name}
                 </span>
-              ))}
-            </div>
-          ) : (
-            <h2 className="nd__page-title">My Notes</h2>
-          )}
+              </span>
+            ))}
+          </div>
         </div>
         <div className="nd__toolbar-right">
+          {/* View controls */}
+          <div className="nd__view-controls">
+            <button
+              className={`nd__view-btn ${viewMode === "grid" ? "nd__view-btn--active" : ""}`}
+              onClick={() => updateViewMode("grid")}
+              title="Grid view">
+              <GridIcon />
+            </button>
+            <button
+              className={`nd__view-btn ${viewMode === "list" ? "nd__view-btn--active" : ""}`}
+              onClick={() => updateViewMode("list")}
+              title="List view">
+              <ListIcon />
+            </button>
+            {viewMode === "grid" && (
+              <div className="nd__size-control" ref={sizeDropdownRef}>
+                <button className="nd__view-btn" onClick={() => setShowSizeDropdown(!showSizeDropdown)} title="Card size">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="2" />
+                    <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+                  </svg>
+                </button>
+                {showSizeDropdown && (
+                  <div className="nd__size-dropdown">
+                    {(["small", "medium", "large"] as CardSize[]).map((size) => (
+                      <button key={size}
+                        className={`nd__size-dropdown-item ${cardSize === size ? "nd__size-dropdown-item--active" : ""}`}
+                        onClick={() => { updateCardSize(size); setShowSizeDropdown(false); }}>
+                        {size.charAt(0).toUpperCase() + size.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="nd__toolbar-sep" />
           <button className="an-btn an-btn--ghost" onClick={handleCreateFolder}>
             <FolderIcon /> New Folder
           </button>
-          <button className="an-btn an-btn--primary" onClick={() => onNewDrawing(currentFolderId)}>
+          <button className="an-btn an-btn--primary" onClick={() => onNewDrawing(currentFolderId, folderPath)}>
             <PlusIcon /> New Drawing
           </button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="nd__content">
+      {/* Content — unified view: folders first, then drawings */}
+      <div className={`nd__content nd__content--${viewMode} nd__content--${cardSize}`}>
         {loading ? (
           <div className="nd__spinner" />
         ) : isEmpty ? (
@@ -357,48 +505,60 @@ export const NotesDashboard = ({ onNewDrawing, onOpenDrawing, onLogout }: NotesD
             <div className="nd__empty-icon"><PenIcon /></div>
             <div className="nd__empty-title">{breadcrumb.length > 0 ? "This folder is empty" : "No drawings yet"}</div>
             <div className="nd__empty-desc">Create a new drawing to get started, or add a folder to organize your work.</div>
-            <button className="an-btn an-btn--primary" style={{ marginTop: "1.25rem" }} onClick={() => onNewDrawing(currentFolderId)}>
+            <button className="an-btn an-btn--primary" style={{ marginTop: "1.25rem" }} onClick={() => onNewDrawing(currentFolderId, folderPath)}>
               <PlusIcon /> Create Drawing
             </button>
           </div>
+        ) : viewMode === "grid" ? (
+          <div className={`nd__grid nd__grid--${cardSize}`}>
+            {folders.map((folder) => (
+              <div key={folder.$id} className="nd__folder-card" onClick={() => navigateToFolder(folder)}>
+                <div className="nd__folder-card-icon" style={{ background: folder.color || "var(--primary)" }}>
+                  <FolderIcon />
+                </div>
+                <div className="nd__folder-card-info">
+                  <div className="nd__folder-card-name">{folder.name}</div>
+                </div>
+                <button className="nd__card-menu" onClick={(e) => showFolderMenu(e, folder)}><DotsIcon /></button>
+              </div>
+            ))}
+            {drawings.map((drawing) => (
+              <div key={drawing.$id} className="nd__drawing-card" onClick={() => onOpenDrawing(drawing, folderPath)}>
+                <div className="nd__drawing-card-preview"><FileIcon /></div>
+                <div className="nd__drawing-card-info">
+                  <div className="nd__drawing-card-name">{drawing.name}</div>
+                  <div className="nd__drawing-card-date">{formatDate(drawing.lastModified)}</div>
+                </div>
+                <button className="nd__card-menu nd__card-menu--abs" onClick={(e) => showDrawingMenu(e, drawing)}><DotsIcon /></button>
+              </div>
+            ))}
+          </div>
         ) : (
-          <>
-            {folders.length > 0 && (
-              <div className="nd__section">
-                <div className="nd__section-title">Folders</div>
-                <div className="nd__grid">
-                  {folders.map((folder) => (
-                    <div key={folder.$id} className="nd__folder-card" onClick={() => navigateToFolder(folder)}>
-                      <div className="nd__folder-card-icon" style={{ background: folder.color || "var(--primary)" }}>
-                        <FolderIcon />
-                      </div>
-                      <div className="nd__folder-card-info">
-                        <div className="nd__folder-card-name">{folder.name}</div>
-                      </div>
-                      <button className="nd__card-menu" onClick={(e) => showFolderMenu(e, folder)}><DotsIcon /></button>
-                    </div>
-                  ))}
+          /* List view */
+          <div className="nd__list">
+            {folders.map((folder) => (
+              <div key={folder.$id} className="nd__list-row" onClick={() => navigateToFolder(folder)}>
+                <div className="nd__list-row-icon nd__list-row-icon--folder" style={{ color: folder.color || "var(--primary)" }}>
+                  <FolderIcon />
                 </div>
+                <div className="nd__list-row-name">{folder.name}</div>
+                <div className="nd__list-row-type">Folder</div>
+                <div className="nd__list-row-date">{formatDate(folder.$updatedAt)}</div>
+                <button className="nd__card-menu" onClick={(e) => showFolderMenu(e, folder)}><DotsIcon /></button>
               </div>
-            )}
-            {drawings.length > 0 && (
-              <div className="nd__section">
-                <div className="nd__section-title">Drawings</div>
-                <div className="nd__grid nd__grid--drawings">
-                  {drawings.map((drawing) => (
-                    <div key={drawing.$id} className="nd__drawing-card" onClick={() => onOpenDrawing(drawing)}>
-                      <div className="nd__drawing-card-preview"><FileIcon /></div>
-                      <div className="nd__drawing-card-info">
-                        <div className="nd__drawing-card-name">{drawing.name}</div>
-                        <div className="nd__drawing-card-date">{formatDate(drawing.lastModified)}</div>
-                      </div>
-                      <button className="nd__card-menu nd__card-menu--abs" onClick={(e) => showDrawingMenu(e, drawing)}><DotsIcon /></button>
-                    </div>
-                  ))}
+            ))}
+            {drawings.map((drawing) => (
+              <div key={drawing.$id} className="nd__list-row" onClick={() => onOpenDrawing(drawing, folderPath)}>
+                <div className="nd__list-row-icon nd__list-row-icon--drawing">
+                  <FileIcon />
                 </div>
+                <div className="nd__list-row-name">{drawing.name}</div>
+                <div className="nd__list-row-type">Drawing</div>
+                <div className="nd__list-row-date">{formatDate(drawing.lastModified)}</div>
+                <button className="nd__card-menu" onClick={(e) => showDrawingMenu(e, drawing)}><DotsIcon /></button>
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </div>
 

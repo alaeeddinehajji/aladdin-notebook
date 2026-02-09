@@ -8,32 +8,58 @@ import {
   loadDrawingFromCloud,
   getDrawingById,
   saveDrawingToCloud,
+  buildFolderPath,
 } from "./data/drawingStorage";
 import { getCurrentUser, isLoggedIn, logout } from "./data/authService";
 
 import type { DrawingDocument } from "./data/drawingStorage";
 import type { User } from "./data/authService";
 
+// ---------------------------------------------------------------------------
+// Route types — folder context is encoded in the URL path, not in state
+// ---------------------------------------------------------------------------
+
 type Route =
   | { type: "landing" }
   | { type: "login" }
   | { type: "register" }
-  | { type: "notes" }
+  | { type: "notes"; folderPath: string[] }
   | {
       type: "editor";
       drawingId: string;
+      folderPath: string[];
       folderId: string;
       drawing?: DrawingDocument;
       initialData?: object;
     }
-  | {
-      type: "collab";
-    };
+  | { type: "collab" };
+
+// ---------------------------------------------------------------------------
+// URL helpers
+// ---------------------------------------------------------------------------
 
 const navigateTo = (path: string) => {
   window.history.pushState({}, "", path);
   window.dispatchEvent(new PopStateEvent("popstate"));
 };
+
+const buildNotesUrl = (folderPath: string[]) => {
+  if (folderPath.length === 0) {
+    return "/notes";
+  }
+  return "/notes/" + folderPath.map(encodeURIComponent).join("/");
+};
+
+const buildDrawingUrl = (folderPath: string[], drawingId: string) => {
+  const base = folderPath.length > 0
+    ? "/notes/" + folderPath.map(encodeURIComponent).join("/")
+    : "/notes";
+  return `${base}/drawing/${drawingId}`;
+};
+
+// ---------------------------------------------------------------------------
+// Route parsing — derives everything from the URL
+// ---------------------------------------------------------------------------
 
 const parseRoute = (): Route => {
   const path = window.location.pathname;
@@ -50,17 +76,40 @@ const parseRoute = (): Route => {
   if (path === "/register") {
     return { type: "register" };
   }
+
+  // Everything under /notes/...
   if (path === "/notes" || path === "/notes/") {
-    return { type: "notes" };
+    return { type: "notes", folderPath: [] };
   }
-  // /notes/:drawingId
-  const drawingMatch = path.match(/^\/notes\/([a-zA-Z0-9._-]+)$/);
-  if (drawingMatch) {
-    return { type: "editor", drawingId: drawingMatch[1], folderId: "" };
+
+  if (path.startsWith("/notes/")) {
+    // Strip "/notes/" prefix and decode segments
+    const rest = path.slice("/notes/".length).replace(/\/$/, "");
+    const segments = rest.split("/").map(decodeURIComponent);
+
+    // Check for /drawing/<id> pattern anywhere in the path
+    const drawingIdx = segments.indexOf("drawing");
+    if (drawingIdx >= 0 && drawingIdx < segments.length - 1) {
+      const drawingId = segments[drawingIdx + 1];
+      const folderPath = segments.slice(0, drawingIdx);
+      return { type: "editor", drawingId, folderPath, folderId: "" };
+    }
+
+    // Legacy URL compat: /notes/<appwriteId> (single segment, 20+ chars, looks like a doc ID)
+    if (segments.length === 1 && /^[a-zA-Z0-9._-]{20,}$/.test(segments[0])) {
+      return { type: "editor", drawingId: segments[0], folderPath: [], folderId: "" };
+    }
+
+    // Otherwise it's a folder path
+    return { type: "notes", folderPath: segments };
   }
 
   return { type: "landing" };
 };
+
+// ---------------------------------------------------------------------------
+// Router component
+// ---------------------------------------------------------------------------
 
 export const AppRouter = () => {
   const [route, setRoute] = useState<Route>(parseRoute);
@@ -83,8 +132,6 @@ export const AppRouter = () => {
       getDrawingById(route.drawingId)
         .then(async (drawing) => {
           if (!drawing) {
-            // Drawing doesn't exist yet in DB — this is a fresh drawing
-            // (could happen if someone navigates directly to /notes/someId)
             alert("Drawing not found");
             navigateTo("/notes");
             return;
@@ -93,12 +140,26 @@ export const AppRouter = () => {
           try {
             data = await loadDrawingFromCloud(drawing.$id);
           } catch {
-            // Data might not exist yet (just created), use empty scene
             data = {};
           }
+
+          // If the URL didn't have a folder path, reconstruct it from the drawing's folderId
+          let folderPath = route.folderPath;
+          if (folderPath.length === 0 && drawing.folderId) {
+            try {
+              folderPath = await buildFolderPath(drawing.folderId);
+              // Update the URL to include the folder path
+              const correctUrl = buildDrawingUrl(folderPath, drawing.$id);
+              window.history.replaceState({}, "", correctUrl);
+            } catch {
+              // ignore — keep empty path
+            }
+          }
+
           setRoute({
             type: "editor",
             drawingId: drawing.$id,
+            folderPath,
             folderId: drawing.folderId,
             drawing,
             initialData: data,
@@ -113,8 +174,7 @@ export const AppRouter = () => {
     }
   }, [route, loadingDrawing]);
 
-  // Auth guard: redirect to login if trying to access /notes without being logged in
-  // Note: collab routes don't require auth
+  // Auth guard
   useEffect(() => {
     if (
       (route.type === "notes" || route.type === "editor") &&
@@ -135,8 +195,8 @@ export const AppRouter = () => {
     navigateTo("/");
   }, []);
 
-  // Create a new drawing immediately in Appwrite, then navigate to /notes/:id
-  const handleNewDrawing = useCallback(async (folderId: string) => {
+  // Create a new drawing — URL includes folder path context
+  const handleNewDrawing = useCallback(async (folderId: string, folderPath: string[]) => {
     const currentUser = getCurrentUser();
     if (!currentUser) {
       navigateTo("/login");
@@ -146,7 +206,6 @@ export const AppRouter = () => {
     setLoadingDrawing(true);
     try {
       const name = `Untitled ${new Date().toLocaleDateString()}`;
-      // Create an empty drawing document with an empty scene
       const emptyScene = {
         type: "excalidraw",
         version: 2,
@@ -160,11 +219,12 @@ export const AppRouter = () => {
         emptyScene,
         folderId,
       );
-      // Navigate to the permanent URL
-      window.history.pushState({}, "", `/notes/${drawing.$id}`);
+      const url = buildDrawingUrl(folderPath, drawing.$id);
+      window.history.pushState({}, "", url);
       setRoute({
         type: "editor",
         drawingId: drawing.$id,
+        folderPath,
         folderId: drawing.folderId,
         drawing,
         initialData: emptyScene,
@@ -177,7 +237,8 @@ export const AppRouter = () => {
     }
   }, []);
 
-  const handleOpenDrawing = useCallback(async (drawing: DrawingDocument) => {
+  // Open an existing drawing — URL includes folder path context
+  const handleOpenDrawing = useCallback(async (drawing: DrawingDocument, folderPath: string[]) => {
     setLoadingDrawing(true);
     try {
       let data: object = {};
@@ -186,10 +247,12 @@ export const AppRouter = () => {
       } catch {
         data = {};
       }
-      window.history.pushState({}, "", `/notes/${drawing.$id}`);
+      const url = buildDrawingUrl(folderPath, drawing.$id);
+      window.history.pushState({}, "", url);
       setRoute({
         type: "editor",
         drawingId: drawing.$id,
+        folderPath,
         folderId: drawing.folderId,
         drawing,
         initialData: data,
@@ -202,8 +265,9 @@ export const AppRouter = () => {
     }
   }, []);
 
-  const handleGoHome = useCallback(() => {
-    navigateTo("/notes");
+  // Go home = navigate to the folder the drawing was in
+  const handleGoHome = useCallback((folderPath: string[]) => {
+    navigateTo(buildNotesUrl(folderPath));
   }, []);
 
   // Loading state
@@ -283,15 +347,16 @@ export const AppRouter = () => {
       }
       return (
         <NotesDashboard
+          folderPath={route.folderPath}
           onNewDrawing={handleNewDrawing}
           onOpenDrawing={handleOpenDrawing}
           onLogout={handleLogout}
+          onNavigate={navigateTo}
         />
       );
 
     case "editor":
       if (!route.drawing || !route.initialData) {
-        // Still loading
         return null;
       }
       return (
@@ -300,7 +365,7 @@ export const AppRouter = () => {
           drawing={route.drawing}
           folderId={route.folderId}
           initialCloudData={route.initialData}
-          onGoHome={handleGoHome}
+          onGoHome={() => handleGoHome(route.folderPath)}
         />
       );
 

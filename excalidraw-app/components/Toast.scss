@@ -1,0 +1,214 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+.an-toast-container {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+  max-width: 420px;
+  width: 100%;
+}
+
+.an-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.625rem;
+  border: 1px solid #E4E4E7;
+  background: #FFFFFF;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.08),
+    0 2px 4px -2px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.03);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  animation: an-toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.25s, transform 0.25s;
+
+  &--exit {
+    animation: an-toast-out 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  // ── Variant colors ──
+  &--success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+
+    .an-toast__icon {
+      color: #16a34a;
+      background: #dcfce7;
+    }
+  }
+
+  &--error {
+    border-color: #fecaca;
+    background: #fef2f2;
+
+    .an-toast__icon {
+      color: #dc2626;
+      background: #fee2e2;
+    }
+  }
+
+  &--warning {
+    border-color: #fed7aa;
+    background: #fffbeb;
+
+    .an-toast__icon {
+      color: #d97706;
+      background: #fef3c7;
+    }
+  }
+
+  &--info {
+    border-color: #bae6fd;
+    background: #f0f9ff;
+
+    .an-toast__icon {
+      color: #19789E;
+      background: #E0F4F8;
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+    padding-top: 0.125rem;
+  }
+
+  &__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1B1B1E;
+    line-height: 1.4;
+  }
+
+  &__desc {
+    font-size: 0.8125rem;
+    color: #6B7280;
+    line-height: 1.5;
+    margin-top: 0.125rem;
+  }
+
+  &__close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: #9CA3AF;
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+    margin-top: 0.125rem;
+
+    &:hover {
+      color: #4B5563;
+      background: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+// ── Dark mode support ──
+.theme--dark .an-toast,
+.dark .an-toast {
+  &--success {
+    border-color: #166534;
+    background: #052e16;
+
+    .an-toast__icon {
+      color: #4ade80;
+      background: #14532d;
+    }
+
+    .an-toast__title { color: #f0fdf4; }
+    .an-toast__desc { color: #86efac; }
+  }
+
+  &--error {
+    border-color: #991b1b;
+    background: #450a0a;
+
+    .an-toast__icon {
+      color: #fca5a5;
+      background: #7f1d1d;
+    }
+
+    .an-toast__title { color: #fef2f2; }
+    .an-toast__desc { color: #fecaca; }
+  }
+
+  &--warning {
+    border-color: #92400e;
+    background: #451a03;
+
+    .an-toast__icon {
+      color: #fbbf24;
+      background: #78350f;
+    }
+
+    .an-toast__title { color: #fffbeb; }
+    .an-toast__desc { color: #fde68a; }
+  }
+
+  &--info {
+    border-color: #0f5a76;
+    background: #052e3d;
+
+    .an-toast__icon {
+      color: #5ec4e6;
+      background: #0f5a76;
+    }
+
+    .an-toast__title { color: #f0f9ff; }
+    .an-toast__desc { color: #bae6fd; }
+  }
+
+  .an-toast__close {
+    color: #6B7280;
+
+    &:hover {
+      color: #d1d5db;
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+}
+
+@keyframes an-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes an-toast-out {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+}

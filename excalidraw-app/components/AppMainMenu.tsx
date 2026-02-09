@@ -43,6 +43,22 @@ const CloudIcon = () => (
   </svg>
 );
 
+const HistoryIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
 export const AppMainMenu: React.FC<{
   onCollabDialogOpen: () => any;
   isCollaborating: boolean;
@@ -53,6 +69,7 @@ export const AppMainMenu: React.FC<{
   onSaveToCloud?: () => void;
   isSaving?: boolean;
   onGoHome?: () => void;
+  onVersionHistory?: () => void;
 }> = React.memo((props) => {
   return (
     <MainMenu>
@@ -79,6 +96,15 @@ export const AppMainMenu: React.FC<{
             {props.isSaving ? "Saving..." : "Auto-save on"}
           </div>
         </MainMenu.ItemCustom>
+      )}
+      {props.onVersionHistory && (
+        <MainMenu.Item
+          icon={<HistoryIcon />}
+          onClick={props.onVersionHistory}
+          shortcut="Ctrl+H"
+        >
+          Version history
+        </MainMenu.Item>
       )}
       {(props.onGoHome || props.onSaveToCloud) && <MainMenu.Separator />}
       <MainMenu.DefaultItems.LoadScene />

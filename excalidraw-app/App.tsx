@@ -1,10 +1,8 @@
 import {
   Excalidraw,
-  LiveCollaborationTrigger,
   TTDDialogTrigger,
   CaptureUpdateAction,
   reconcileElements,
-  useEditorInterface,
 } from "@excalidraw/excalidraw";
 import { trackEvent } from "@excalidraw/excalidraw/analytics";
 import {
@@ -77,8 +75,14 @@ import {
   useAtomWithInitialValue,
   appJotaiStore,
 } from "./app-jotai";
-import { saveDrawingToCloud } from "./data/drawingStorage";
+import {
+  saveDrawingToCloud,
+  createVersionSnapshot,
+  deleteOldSnapshots,
+} from "./data/drawingStorage";
 import { getCurrentUser } from "./data/authService";
+import { toast, ToastContainer } from "./components/Toast";
+import { VersionHistoryPanel } from "./components/VersionHistoryPanel";
 
 import type { DrawingDocument } from "./data/drawingStorage";
 import {
@@ -336,8 +340,6 @@ const ExcalidrawWrapper = ({
 
   const [langCode, setLangCode] = useAppLangCode();
 
-  const editorInterface = useEditorInterface();
-
   // initial state
   // ---------------------------------------------------------------------------
 
@@ -351,6 +353,7 @@ const ExcalidrawWrapper = ({
 
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const [currentDrawing, setCurrentDrawing] = useState<DrawingDocument | undefined>(cloudDrawing);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -358,18 +361,38 @@ const ExcalidrawWrapper = ({
   const sceneInitializedRef = useRef(false);
   const onChangeCountRef = useRef(0);
   const lastSavedElementsRef = useRef<string>("");
+  const isSavingRef = useRef(false);
+  const offlineQueueRef = useRef(false);
 
-  // Track online/offline status
+  // Version history state (hooks that use excalidrawAPI are below, after its declaration)
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const lastSnapshotTimeRef = useRef<number>(0);
+  const lastSnapshotElementsRef = useRef<string>("");
+  const snapshotIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Track online/offline status + auto-sync on reconnect
   useEffect(() => {
-    const goOnline = () => setIsNetworkOffline(false);
-    const goOffline = () => setIsNetworkOffline(true);
+    const goOnline = () => {
+      setIsNetworkOffline(false);
+      // If we had unsaved changes while offline, trigger immediate save
+      if (offlineQueueRef.current) {
+        offlineQueueRef.current = false;
+        setTimeout(() => autoSaveRef.current(), 500);
+      }
+    };
+    const goOffline = () => {
+      setIsNetworkOffline(true);
+      if (hasUnsavedChanges) {
+        offlineQueueRef.current = true;
+      }
+    };
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
     return () => {
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
     };
-  }, []);
+  }, [hasUnsavedChanges]);
 
   // Auto-save: throttled cloud save triggered by onChange
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -406,7 +429,13 @@ const ExcalidrawWrapper = ({
       files,
     };
 
+    if (isSavingRef.current) {
+      // Already saving — reschedule
+      scheduleAutoSave();
+      return;
+    }
     setIsSaving(true);
+    isSavingRef.current = true;
     saveDrawingToCloud(
       currentUser.$id,
       currentDrawing.name,
@@ -418,15 +447,21 @@ const ExcalidrawWrapper = ({
       .then((saved) => {
         setCurrentDrawing(saved);
         setHasUnsavedChanges(false);
+        setSaveFailed(false);
         setLastSavedAt(new Date());
         // Store the elements that were saved to compare later
         lastSavedElementsRef.current = JSON.stringify(elements);
+        clearLocalStorageBackup();
+        offlineQueueRef.current = false;
       })
       .catch((err) => {
         console.error("Auto-save failed:", err);
+        setSaveFailed(true);
+        offlineQueueRef.current = true;
       })
       .finally(() => {
         setIsSaving(false);
+        isSavingRef.current = false;
       });
   };
 
@@ -437,22 +472,224 @@ const ExcalidrawWrapper = ({
   useEffect(() => {
     if (initialCloudData && (initialCloudData as any).elements && excalidrawAPI) {
       // Initialize with the loaded elements
-      lastSavedElementsRef.current = JSON.stringify((initialCloudData as any).elements);
+      const elemStr = JSON.stringify((initialCloudData as any).elements);
+      lastSavedElementsRef.current = elemStr;
+      lastSnapshotElementsRef.current = elemStr;
       setHasUnsavedChanges(false);
     }
   }, [initialCloudData, excalidrawAPI]);
 
-  // Schedule auto-save (debounced 5s after last change)
+  // localStorage backup for crash recovery
+  const saveToLocalStorageBackup = useCallback((elements: readonly any[], appState: any, files: any) => {
+    if (!currentDrawing) return;
+    try {
+      const backup = JSON.stringify({
+        drawingId: currentDrawing.$id,
+        timestamp: Date.now(),
+        scene: {
+          type: "excalidraw",
+          version: 2,
+          elements,
+          appState: {
+            viewBackgroundColor: appState?.viewBackgroundColor,
+            gridSize: appState?.gridSize,
+          },
+          files,
+        },
+      });
+      localStorage.setItem(`aladdin-backup-${currentDrawing.$id}`, backup);
+    } catch {
+      // localStorage might be full, ignore
+    }
+  }, [currentDrawing]);
+
+  // Clear localStorage backup after successful cloud save
+  const clearLocalStorageBackup = useCallback(() => {
+    if (!currentDrawing) return;
+    try {
+      localStorage.removeItem(`aladdin-backup-${currentDrawing.$id}`);
+    } catch {
+      // ignore
+    }
+  }, [currentDrawing]);
+
+  // Schedule auto-save (debounced 1.5s after last change)
   const scheduleAutoSave = useCallback(() => {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
     autoSaveTimerRef.current = setTimeout(() => {
       autoSaveRef.current();
-    }, 5000);
+    }, 1500);
   }, []);
 
-  // Cleanup auto-save timer on unmount, and flush save
+  // ---------------------------------------------------------------------------
+  // Version history hooks (placed after excalidrawAPI & scheduleAutoSave)
+  // ---------------------------------------------------------------------------
+
+  // Create a version snapshot (used by auto-interval and before restore)
+  // Manual saves call createVersionSnapshot() directly with captured sceneData.
+  const createSnapshotIfNeeded = useCallback(
+    async (trigger: "auto" | "restore") => {
+      if (!excalidrawAPI || !currentDrawing || !onGoHome) {
+        return;
+      }
+      if (!sceneInitializedRef.current) {
+        return;
+      }
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        return;
+      }
+      const elements = excalidrawAPI.getSceneElements();
+      if (elements.length === 0) {
+        return;
+      }
+      // For auto snapshots, skip if elements haven't changed since last snapshot
+      if (trigger === "auto") {
+        const currentStr = JSON.stringify(elements);
+        if (currentStr === lastSnapshotElementsRef.current) {
+          return;
+        }
+      }
+      const appState = excalidrawAPI.getAppState();
+      const files = excalidrawAPI.getFiles();
+      const sceneData = {
+        type: "excalidraw",
+        version: 2,
+        elements,
+        appState: {
+          viewBackgroundColor: appState.viewBackgroundColor,
+          gridSize: appState.gridSize,
+        },
+        files,
+      };
+      try {
+        await createVersionSnapshot(
+          currentDrawing.$id,
+          currentUser.$id,
+          sceneData,
+          trigger,
+        );
+        lastSnapshotTimeRef.current = Date.now();
+        lastSnapshotElementsRef.current = JSON.stringify(elements);
+        // Cleanup old snapshots (>30 days) in background
+        deleteOldSnapshots(currentDrawing.$id, 30).catch(() => {});
+      } catch (err) {
+        console.error("Failed to create version snapshot:", err);
+      }
+    },
+    [excalidrawAPI, currentDrawing, onGoHome],
+  );
+
+  // 5-minute auto-snapshot interval
+  useEffect(() => {
+    if (!currentDrawing || !onGoHome) {
+      return;
+    }
+    snapshotIntervalRef.current = setInterval(() => {
+      createSnapshotIfNeeded("auto");
+    }, 5 * 60 * 1000);
+    return () => {
+      if (snapshotIntervalRef.current) {
+        clearInterval(snapshotIntervalRef.current);
+      }
+    };
+  }, [currentDrawing, onGoHome, createSnapshotIfNeeded]);
+
+  // Ctrl+H keyboard shortcut for version history
+  useEffect(() => {
+    if (!currentDrawing || !onGoHome) {
+      return;
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "h") {
+        e.preventDefault();
+        setShowVersionHistory((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentDrawing, onGoHome]);
+
+  // Version history restore handler (preview is now modal-based inside the panel)
+  const handleVersionRestore = useCallback(
+    async (canvasData: object, snapshotTimestamp: string) => {
+      if (!excalidrawAPI || !currentDrawing) {
+        return;
+      }
+      // Create a snapshot of current state before restoring
+      await createSnapshotIfNeeded("restore");
+
+      // Load restored data
+      const scene = canvasData as any;
+      if (scene.elements) {
+        excalidrawAPI.updateScene({
+          elements: restoreElements(scene.elements, null, {
+            repairBindings: true,
+          }),
+          appState: {
+            ...restoreAppState(scene.appState, null),
+            viewModeEnabled: false,
+          },
+          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        });
+      }
+
+      setShowVersionHistory(false);
+
+      // Mark as unsaved to trigger autosave of restored version
+      setHasUnsavedChanges(true);
+      scheduleAutoSave();
+
+      const ts = new Date(snapshotTimestamp).toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      toast.success("Version restored", `Restored to version from ${ts}`);
+    },
+    [excalidrawAPI, currentDrawing, createSnapshotIfNeeded, scheduleAutoSave],
+  );
+
+  // Fire-and-forget snapshot on exit if elements changed since last snapshot
+  const snapshotOnExitRef = useRef<() => void>(() => {});
+  snapshotOnExitRef.current = () => {
+    if (!excalidrawAPI || !currentDrawing || !onGoHome || !sceneInitializedRef.current) {
+      return;
+    }
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      return;
+    }
+    const elements = excalidrawAPI.getSceneElements();
+    if (elements.length === 0) {
+      return;
+    }
+    const currentStr = JSON.stringify(elements);
+    if (currentStr === lastSnapshotElementsRef.current) {
+      return;
+    }
+    const appState = excalidrawAPI.getAppState();
+    const files = excalidrawAPI.getFiles();
+    const sceneData = {
+      type: "excalidraw",
+      version: 2,
+      elements,
+      appState: {
+        viewBackgroundColor: appState.viewBackgroundColor,
+        gridSize: appState.gridSize,
+      },
+      files,
+    };
+    // Fire-and-forget — we can't await in beforeunload/unmount
+    createVersionSnapshot(currentDrawing.$id, currentUser.$id, sceneData, "auto").catch(() => {});
+    lastSnapshotElementsRef.current = currentStr;
+  };
+
+  // Cleanup auto-save timer on unmount, and flush save + exit snapshot
   useEffect(() => {
     return () => {
       if (autoSaveTimerRef.current) {
@@ -460,7 +697,61 @@ const ExcalidrawWrapper = ({
         // Flush: do a final save on unmount
         autoSaveRef.current();
       }
+      // Create a version snapshot if content changed since last snapshot
+      snapshotOnExitRef.current();
     };
+  }, []);
+
+  // Flush cloud save on beforeunload (page close/refresh) + warn if unsaved
+  useEffect(() => {
+    const flushOnUnload = (e: BeforeUnloadEvent) => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+      // Synchronous best-effort: trigger the save (fire-and-forget)
+      autoSaveRef.current();
+      // Create a version snapshot if content changed since last snapshot
+      snapshotOnExitRef.current();
+      // Also do a synchronous localStorage backup as last resort
+      if (excalidrawAPI && currentDrawing) {
+        try {
+          const els = excalidrawAPI.getSceneElements();
+          const as = excalidrawAPI.getAppState();
+          const fs = excalidrawAPI.getFiles();
+          const backup = JSON.stringify({
+            drawingId: currentDrawing.$id,
+            timestamp: Date.now(),
+            scene: {
+              type: "excalidraw",
+              version: 2,
+              elements: els,
+              appState: { viewBackgroundColor: as.viewBackgroundColor, gridSize: as.gridSize },
+              files: fs,
+            },
+          });
+          localStorage.setItem(`aladdin-backup-${currentDrawing.$id}`, backup);
+        } catch { /* ignore */ }
+      }
+      // Warn user if there are unsaved changes
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
+      }
+    };
+    window.addEventListener("beforeunload", flushOnUnload);
+    return () => window.removeEventListener("beforeunload", flushOnUnload);
+  }, [excalidrawAPI, currentDrawing, hasUnsavedChanges]);
+
+  // Flush cloud save on visibility change (tab switch / blur)
+  useEffect(() => {
+    const flushOnHide = () => {
+      if (document.hidden && autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveRef.current();
+      }
+    };
+    document.addEventListener("visibilitychange", flushOnHide);
+    return () => document.removeEventListener("visibilitychange", flushOnHide);
   }, []);
 
   useEffect(() => {
@@ -793,8 +1084,11 @@ const ExcalidrawWrapper = ({
         
         if (elementsChanged) {
           setHasUnsavedChanges(true);
+          // Backup to localStorage immediately for crash recovery
+          saveToLocalStorageBackup(elements, appState, files);
+          // Only schedule auto-save when elements actually changed
+          scheduleAutoSave();
         }
-        scheduleAutoSave();
       }
     }
 
@@ -830,6 +1124,77 @@ const ExcalidrawWrapper = ({
     () => setShareDialogState({ isOpen: true, type: "collaborationOnly" }),
     [setShareDialogState],
   );
+
+  // Shared manual save + version snapshot logic (used by toolbar save button and menu)
+  const triggerManualSave = useCallback(async () => {
+    if (!excalidrawAPI || isSaving || !currentDrawing) {
+      return;
+    }
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      toast.warning(
+        "Not signed in",
+        "Please log in to save your drawings to the cloud.",
+      );
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const elements = excalidrawAPI.getSceneElements();
+      const appState = excalidrawAPI.getAppState();
+      const files = excalidrawAPI.getFiles();
+      const sceneData = {
+        type: "excalidraw",
+        version: 2,
+        elements,
+        appState: {
+          viewBackgroundColor: appState.viewBackgroundColor,
+          gridSize: appState.gridSize,
+        },
+        files,
+      };
+      const drawingName =
+        currentDrawing.name ||
+        `Drawing ${new Date().toLocaleDateString()}`;
+      const saved = await saveDrawingToCloud(
+        currentUser.$id,
+        drawingName,
+        sceneData,
+        cloudFolderId,
+        currentDrawing.$id,
+        currentDrawing.storageFileId,
+      );
+      setCurrentDrawing(saved);
+      setHasUnsavedChanges(false);
+      setSaveFailed(false);
+      setLastSavedAt(new Date());
+      lastSavedElementsRef.current = JSON.stringify(elements);
+      clearLocalStorageBackup();
+      offlineQueueRef.current = false;
+      if (saved.$id) {
+        createVersionSnapshot(saved.$id, currentUser.$id, sceneData, "manual")
+          .then(() => {
+            lastSnapshotTimeRef.current = Date.now();
+            lastSnapshotElementsRef.current = JSON.stringify(elements);
+            deleteOldSnapshots(saved.$id, 30).catch(() => {});
+          })
+          .catch((err) => console.error("Failed to create version snapshot:", err));
+      }
+      toast.success(
+        "Saved to cloud",
+        `"${drawingName}" synced at ${new Date().toLocaleTimeString()}`,
+      );
+    } catch (err) {
+      console.error("Failed to save to cloud:", err);
+      setSaveFailed(true);
+      toast.error(
+        "Save failed",
+        "Could not sync your drawing. Check your connection and try again.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }, [excalidrawAPI, isSaving, currentDrawing, cloudFolderId, clearLocalStorageBackup]);
 
   // browsers generally prevent infinite self-embedding, there are
   // cases where it still happens, and while we disallow self-embedding
@@ -875,131 +1240,185 @@ const ExcalidrawWrapper = ({
         autoFocus={true}
         theme={editorTheme}
         renderTopRightUI={(isMobile) => {
+          // Save status indicator
           const saveStatusDot = currentDrawing && onGoHome ? (() => {
-            let color: string;
-            let label: string;
+            let dotColor: string;
+            let bgColor: string;
+            let borderColor: string;
+            let iconColor: string;
             if (isNetworkOffline) {
-              color = "#EF4444";
-              label = "Offline";
+              dotColor = "#EF4444";
+              bgColor = "#fef2f2";
+              borderColor = "#fecaca";
+              iconColor = "#dc2626";
+            } else if (saveFailed && !isSaving) {
+              dotColor = "#EF4444";
+              bgColor = "#fef2f2";
+              borderColor = "#fecaca";
+              iconColor = "#dc2626";
             } else if (isSaving) {
-              color = "#F59E0B";
-              label = "Saving...";
+              dotColor = "#F59E0B";
+              bgColor = "#fffbeb";
+              borderColor = "#fed7aa";
+              iconColor = "#d97706";
             } else if (hasUnsavedChanges) {
-              color = "#F59E0B";
-              label = "Unsaved changes";
+              dotColor = "#F59E0B";
+              bgColor = "#fffbeb";
+              borderColor = "#fed7aa";
+              iconColor = "#d97706";
             } else {
-              color = "#22C55E";
-              label = lastSavedAt
-                ? `Saved at ${lastSavedAt.toLocaleTimeString()}`
-                : "Saved";
+              dotColor = "#22C55E";
+              bgColor = "#f0fdf4";
+              borderColor = "#bbf7d0";
+              iconColor = "#16a34a";
             }
             return (
               <div
-                title={label}
+                title={isNetworkOffline ? "You are offline — changes saved locally" : saveFailed && !isSaving ? "Save failed — click to retry" : isSaving ? "Syncing to cloud…" : hasUnsavedChanges ? "Click to save now" : lastSavedAt ? `Last saved at ${lastSavedAt.toLocaleTimeString()}` : "All changes saved"}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "0.375rem",
-                  padding: "0.375rem 0.625rem",
-                  borderRadius: "0.5rem",
-                  background: "var(--island-bg-color, #fff)",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
-                  cursor: hasUnsavedChanges && !isSaving ? "pointer" : "default",
+                  padding: "0.25rem 0.625rem 0.25rem 0.5rem",
+                  borderRadius: "0.625rem",
+                  background: bgColor,
+                  border: `1px solid ${borderColor}`,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+                  cursor: (hasUnsavedChanges || saveFailed) && !isSaving ? "pointer" : "default",
                   fontSize: "0.75rem",
-                  color: "var(--text-primary-color, #1B1B1E)",
+                  fontFamily: "'IBM Plex Sans', system-ui, sans-serif",
+                  fontWeight: 500,
+                  color: iconColor,
                   userSelect: "none",
-                  transition: "background-color 0.2s",
+                  transition: "all 0.2s ease",
+                  lineHeight: 1,
                 }}
                 onClick={() => {
-                  if (hasUnsavedChanges && !isSaving && excalidrawAPI && currentDrawing) {
-                    // Trigger immediate save when clicking unsaved changes
-                    const elements = excalidrawAPI.getSceneElements();
-                    const appState = excalidrawAPI.getAppState();
-                    const files = excalidrawAPI.getFiles();
-                    const sceneData = {
-                      type: "excalidraw",
-                      version: 2,
-                      elements,
-                      appState: {
-                        viewBackgroundColor: appState.viewBackgroundColor,
-                        gridSize: appState.gridSize,
-                      },
-                      files,
-                    };
-                    
-                    setIsSaving(true);
-                    saveDrawingToCloud(
-                      getCurrentUser()!.$id,
-                      currentDrawing.name,
-                      sceneData,
-                      cloudFolderId,
-                      currentDrawing.$id,
-                      currentDrawing.storageFileId,
-                    )
-                      .then((saved) => {
-                        setCurrentDrawing(saved);
-                        setHasUnsavedChanges(false);
-                        setLastSavedAt(new Date());
-                        lastSavedElementsRef.current = JSON.stringify(elements);
-                        excalidrawAPI.setToast({
-                          message: "Saved to cloud!",
-                        });
-                      })
-                      .catch((err) => {
-                        console.error("Failed to save to cloud:", err);
-                        excalidrawAPI.setToast({
-                          message: "Failed to save to cloud",
-                        });
-                      })
-                      .finally(() => {
-                        setIsSaving(false);
-                      });
+                  if ((hasUnsavedChanges || saveFailed) && !isSaving) {
+                    triggerManualSave();
                   }
                 }}
                 onMouseEnter={(e) => {
-                  if (hasUnsavedChanges && !isSaving) {
-                    e.currentTarget.style.backgroundColor = "var(--button-hover-bg, #f3f4f6)";
+                  if ((hasUnsavedChanges || saveFailed) && !isSaving) {
+                    e.currentTarget.style.opacity = "0.85";
+                    e.currentTarget.style.transform = "scale(1.02)";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--island-bg-color, #fff)";
+                  e.currentTarget.style.opacity = "1";
+                  e.currentTarget.style.transform = "scale(1)";
                 }}
               >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+                </svg>
                 <span
                   style={{
-                    width: 8,
-                    height: 8,
+                    width: 6,
+                    height: 6,
                     borderRadius: "50%",
-                    background: color,
+                    background: dotColor,
                     display: "inline-block",
                     flexShrink: 0,
-                    boxShadow: `0 0 4px ${color}80`,
+                    boxShadow: `0 0 4px ${dotColor}60`,
                   }}
                 />
-                <span>{label}</span>
               </div>
             );
           })() : null;
 
-          if (isMobile) {
-            return saveStatusDot;
-          }
+          // Square save button (replaces circular collab trigger)
+          const saveButton = currentDrawing && onGoHome ? (
+            <button
+              title={isSaving ? "Saving…" : "Save version now"}
+              onClick={() => triggerManualSave()}
+              disabled={isSaving}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                border: "1px solid var(--color-border-outline-variant, #d1d5db)",
+                background: "var(--island-bg-color, #ffffff)",
+                cursor: isSaving ? "not-allowed" : "pointer",
+                color: "var(--icon-fill-color, #1b1b1e)",
+                transition: "all 0.15s ease",
+                opacity: isSaving ? 0.6 : 1,
+                padding: 0,
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                if (!isSaving) {
+                  e.currentTarget.style.background = "var(--button-hover-bg, #f3f4f6)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--island-bg-color, #ffffff)";
+              }}
+            >
+              {/* Bookmark/save icon */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
+          ) : null;
 
-          if (!collabAPI || isCollabDisabled) {
-            return saveStatusDot;
+          // Version history button
+          const versionHistoryButton = currentDrawing && onGoHome ? (
+            <button
+              title="Version history (Ctrl+H)"
+              onClick={() => setShowVersionHistory((prev) => !prev)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                border: `1px solid ${showVersionHistory ? "#2563eb" : "var(--color-border-outline-variant, #d1d5db)"}`,
+                background: showVersionHistory ? "#eff6ff" : "var(--island-bg-color, #ffffff)",
+                cursor: "pointer",
+                color: showVersionHistory ? "#2563eb" : "var(--icon-fill-color, #1b1b1e)",
+                transition: "all 0.15s ease",
+                padding: 0,
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                if (!showVersionHistory) {
+                  e.currentTarget.style.background = "var(--button-hover-bg, #f3f4f6)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showVersionHistory) {
+                  e.currentTarget.style.background = "var(--island-bg-color, #ffffff)";
+                }
+              }}
+            >
+              {/* Clock/history icon */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </button>
+          ) : null;
+
+          if (isMobile) {
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                {saveStatusDot}
+                {saveButton}
+              </div>
+            );
           }
 
           return (
-            <div className="excalidraw-ui-top-right" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               {saveStatusDot}
+              {versionHistoryButton}
+              {saveButton}
               {collabError.message && <CollabError collabError={collabError} />}
-              <LiveCollaborationTrigger
-                isCollaborating={isCollaborating}
-                onSelect={() =>
-                  setShareDialogState({ isOpen: true, type: "share" })
-                }
-                editorInterface={editorInterface}
-              />
             </div>
           );
         }}
@@ -1019,67 +1438,12 @@ const ExcalidrawWrapper = ({
           refresh={() => forceRefresh((prev) => !prev)}
           onGoHome={onGoHome}
           isSaving={isSaving}
-          onSaveToCloud={
-            onGoHome
-              ? async () => {
-                  if (!excalidrawAPI || isSaving) {
-                    return;
-                  }
-                  setIsSaving(true);
-                  try {
-                    const elements = excalidrawAPI.getSceneElements();
-                    const appState = excalidrawAPI.getAppState();
-                    const files = excalidrawAPI.getFiles();
-                    const sceneData = {
-                      type: "excalidraw",
-                      version: 2,
-                      elements,
-                      appState: {
-                        viewBackgroundColor: appState.viewBackgroundColor,
-                        gridSize: appState.gridSize,
-                      },
-                      files,
-                    };
-
-                    const drawingName =
-                      currentDrawing?.name ||
-                      `Drawing ${new Date().toLocaleDateString()}`;
-
-                    const currentUser = getCurrentUser();
-                    if (!currentUser) {
-                      excalidrawAPI.setToast({
-                        message: "Please log in to save to cloud",
-                      });
-                      setIsSaving(false);
-                      return;
-                    }
-
-                    const saved = await saveDrawingToCloud(
-                      currentUser.$id,
-                      drawingName,
-                      sceneData,
-                      cloudFolderId,
-                      currentDrawing?.$id,
-                      currentDrawing?.storageFileId,
-                    );
-                    setCurrentDrawing(saved);
-                    setHasUnsavedChanges(false);
-                    setLastSavedAt(new Date());
-                    lastSavedElementsRef.current = JSON.stringify(elements);
-                    excalidrawAPI.setToast({
-                      message: "Saved to cloud!",
-                    });
-                  } catch (err) {
-                    console.error("Failed to save to cloud:", err);
-                    excalidrawAPI.setToast({
-                      message: "Failed to save to cloud",
-                    });
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }
+          onVersionHistory={
+            onGoHome && currentDrawing
+              ? () => setShowVersionHistory((prev) => !prev)
               : undefined
           }
+          onSaveToCloud={onGoHome ? triggerManualSave : undefined}
         />
         <AppWelcomeScreen
           onCollabDialogOpen={onCollabDialogOpen}
@@ -1214,6 +1578,15 @@ const ExcalidrawWrapper = ({
           />
         )}
       </Excalidraw>
+      {showVersionHistory && currentDrawing && (
+        <VersionHistoryPanel
+          drawingId={currentDrawing.$id}
+          isDark={editorTheme === "dark"}
+          onRestore={handleVersionRestore}
+          onClose={() => setShowVersionHistory(false)}
+        />
+      )}
+      <ToastContainer />
     </div>
   );
 };

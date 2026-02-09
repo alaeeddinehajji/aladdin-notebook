@@ -9,11 +9,9 @@ export const AppWelcomeScreen: React.FC<{
   const { t } = useI18n();
   const headingContent = (
     <>
-      {t("welcomeScreen.app.center_heading")}
+      Sketch your ideas,
       <br />
-      {t("welcomeScreen.app.center_heading_line2")}
-      <br />
-      {t("welcomeScreen.app.center_heading_line3")}
+      save them to the cloud.
     </>
   );
 
