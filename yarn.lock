@@ -2198,17 +2198,6 @@
     "@sentry-internal/browser-utils" "9.0.1"
     "@sentry/core" "9.0.1"
 
-"@sentry/browser@9.0.1":
-  version "9.0.1"
-  resolved "https://registry.npmmirror.com/@sentry/browser/-/browser-9.0.1.tgz"
-  integrity sha512-alI1r1NyIARjzEm5493QuOPhiT2W1gelGDV30B1oL5cKo1arjqRLHp8Ny5odlTnyDTFC4EIx5Z69J+iyhW0CvQ==
-  dependencies:
-    "@sentry-internal/browser-utils" "9.0.1"
-    "@sentry-internal/feedback" "9.0.1"
-    "@sentry-internal/replay" "9.0.1"
-    "@sentry-internal/replay-canvas" "9.0.1"
-    "@sentry/core" "9.0.1"
-
 "@sentry/core@9.0.1":
   version "9.0.1"
   resolved "https://registry.npmmirror.com/@sentry/core/-/core-9.0.1.tgz"
@@ -3214,6 +3203,20 @@ ajv@^8.9.0:
     json-schema-traverse "^1.0.0"
     require-from-string "^2.0.2"
 
+"aladdin-notes-app@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\excalidraw-app":
+  version "1.0.0"
+  resolved "file:excalidraw-app"
+  dependencies:
+    "@excalidraw/random-username" "1.0.0"
+    i18next-browser-languagedetector "6.1.4"
+    idb-keyval "6.0.3"
+    jotai "2.11.0"
+    react "19.0.0"
+    react-dom "19.0.0"
+    socket.io-client "4.7.2"
+    uqr "0.1.2"
+    vite-plugin-html "3.2.2"
+
 ansi-colors@^4.1.1:
   version "4.1.3"
   resolved "https://registry.npmmirror.com/ansi-colors/-/ansi-colors-4.1.3.tgz"
@@ -3277,6 +3280,14 @@ anymatch@~3.1.2:
   dependencies:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
+
+appwrite@22.0.0:
+  version "22.0.0"
+  resolved "https://registry.npmmirror.com/appwrite/-/appwrite-22.0.0.tgz"
+  integrity sha512-iFlfshYttuQheIyar6m789+Z/gvfKWQxWQCDhHzH9cEkFkn+laJZV8nMvGRH+1rTYNfAcFuycWKBGZiEDFxXug==
+  dependencies:
+    bignumber.js "9.0.0"
+    json-bigint "1.0.0"
 
 argparse@^1.0.7:
   version "1.0.10"
@@ -3557,6 +3568,11 @@ basic-auth@^2.0.1:
   dependencies:
     safe-buffer "5.1.2"
 
+bignumber.js@^9.0.0, bignumber.js@9.0.0:
+  version "9.0.0"
+  resolved "https://registry.npmmirror.com/bignumber.js/-/bignumber.js-9.0.0.tgz"
+  integrity sha512-t/OYhhJ2SD+YGBQcjY8GzzDHEk9f3nerxjtfa6tlMXfe7frs/WozhvCNoGvpM0P3bNf3Gq5ZRMlGr5f3r4/N8A==
+
 binary-extensions@^2.0.0:
   version "2.3.0"
   resolved "https://registry.npmmirror.com/binary-extensions/-/binary-extensions-2.3.0.tgz"
@@ -3678,11 +3694,6 @@ callsites@^3.0.0:
   version "3.1.0"
   resolved "https://registry.npmmirror.com/callsites/-/callsites-3.1.0.tgz"
   integrity sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==
-
-callsites@4.2.0:
-  version "4.2.0"
-  resolved "https://registry.npmmirror.com/callsites/-/callsites-4.2.0.tgz"
-  integrity sha512-kfzR4zzQtAE9PC7CzZsjl3aBNbXWuXiSeOCdLcPpBfGW8YuCqQHcRPFDbr/BPVmd3EEPVpuFzLyuT/cUhPr4OQ==
 
 camel-case@^4.1.2:
   version "4.1.2"
@@ -5214,23 +5225,6 @@ events@^3.2.0:
   resolved "https://registry.npmmirror.com/events/-/events-3.3.0.tgz"
   integrity sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==
 
-"excalidraw-app@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\excalidraw-app":
-  version "1.0.0"
-  resolved "file:excalidraw-app"
-  dependencies:
-    "@excalidraw/random-username" "1.0.0"
-    "@sentry/browser" "9.0.1"
-    callsites "4.2.0"
-    firebase "11.3.1"
-    i18next-browser-languagedetector "6.1.4"
-    idb-keyval "6.0.3"
-    jotai "2.11.0"
-    react "19.0.0"
-    react-dom "19.0.0"
-    socket.io-client "4.7.2"
-    uqr "0.1.2"
-    vite-plugin-html "3.2.2"
-
 execa@^5.1.1:
   version "5.1.1"
   resolved "https://registry.npmmirror.com/execa/-/execa-5.1.1.tgz"
@@ -5369,40 +5363,6 @@ find-up@^4.0.0:
   dependencies:
     locate-path "^5.0.0"
     path-exists "^4.0.0"
-
-firebase@11.3.1:
-  version "11.3.1"
-  resolved "https://registry.npmmirror.com/firebase/-/firebase-11.3.1.tgz"
-  integrity sha512-P4YVFM0Bm2d8aO61SCEMF8E1pYgieGLrmr/LFw7vs6sAMebwuwHt+Wug+1qL2fhAHWPwpWbCLsdJH8NQ+4Sw8Q==
-  dependencies:
-    "@firebase/analytics" "0.10.11"
-    "@firebase/analytics-compat" "0.2.17"
-    "@firebase/app" "0.11.1"
-    "@firebase/app-check" "0.8.11"
-    "@firebase/app-check-compat" "0.3.18"
-    "@firebase/app-compat" "0.2.50"
-    "@firebase/app-types" "0.9.3"
-    "@firebase/auth" "1.9.0"
-    "@firebase/auth-compat" "0.5.18"
-    "@firebase/data-connect" "0.3.0"
-    "@firebase/database" "1.0.12"
-    "@firebase/database-compat" "2.0.3"
-    "@firebase/firestore" "4.7.8"
-    "@firebase/firestore-compat" "0.3.43"
-    "@firebase/functions" "0.12.2"
-    "@firebase/functions-compat" "0.3.19"
-    "@firebase/installations" "0.6.12"
-    "@firebase/installations-compat" "0.2.12"
-    "@firebase/messaging" "0.12.16"
-    "@firebase/messaging-compat" "0.2.16"
-    "@firebase/performance" "0.7.0"
-    "@firebase/performance-compat" "0.2.13"
-    "@firebase/remote-config" "0.5.0"
-    "@firebase/remote-config-compat" "0.2.12"
-    "@firebase/storage" "0.13.6"
-    "@firebase/storage-compat" "0.3.16"
-    "@firebase/util" "1.10.3"
-    "@firebase/vertexai" "1.0.4"
 
 flat-cache@^3.0.4:
   version "3.2.0"
@@ -6374,6 +6334,13 @@ jsesc@~3.0.2:
   version "3.0.2"
   resolved "https://registry.npmmirror.com/jsesc/-/jsesc-3.0.2.tgz"
   integrity sha512-xKqzzWXDttJuOcawBt4KnKHHIf5oQ/Cxax+0PWFG+DFDgHNAdi+TXECADI+RYiFUMmx8792xsMbbgXj4CwnP4g==
+
+json-bigint@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmmirror.com/json-bigint/-/json-bigint-1.0.0.tgz"
+  integrity sha512-SiPv/8VpZuWbvLSMtTDU8hEfrZWg/mH/nV/b4o0CYbSxu1UIQPLdwKOCIyLQX+VIPO5vrLX3i8qtqFyhdPSUSQ==
+  dependencies:
+    bignumber.js "^9.0.0"
 
 json-buffer@3.0.1:
   version "3.0.1"

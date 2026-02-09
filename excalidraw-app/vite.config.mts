@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
       // open the browser
       open: true,
     },
+    // SPA fallback: Vite serves index.html for all unmatched routes
+    appType: "spa",
     // We need to specify the envDir since now there are no
     //more located in parallel with the vite.config.ts file but in parent dir
     envDir: "../",

@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --background: #F7F7F8;
+  --foreground: #1B1B1E;
+  --card: #FFFFFF;
+  --card-foreground: #1B1B1E;
+  --popover: #FFFFFF;
+  --popover-foreground: #1B1B1E;
+  --primary: #19789E;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0F0F1;
+  --secondary-foreground: #3F3F46;
+  --muted: #F0F0F1;
+  --muted-foreground: #6B7280;
+  --accent: #E0F4F8;
+  --accent-foreground: #19789E;
+  --destructive: #EF4444;
+  --border: #E4E4E7;
+  --input: #E4E4E7;
+  --ring: #19789E;
+  --radius: 0.625rem;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.06), 0 1px 2px -1px hsl(0 0% 0% / 0.06);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.10), 0 2px 4px -2px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.10), 0 4px 6px -4px hsl(0 0% 0% / 0.10);
+}
+
+// Reset for our pages (not the excalidraw editor)
+.an-page {
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background: var(--background);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  a {
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  button {
+    font-family: var(--font-sans);
+  }
+
+  input {
+    font-family: var(--font-sans);
+  }
+}

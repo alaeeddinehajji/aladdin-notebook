@@ -1,0 +1,139 @@
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--background);
+
+  &__container {
+    width: 100%;
+    max-width: 420px;
+    padding: 2rem;
+  }
+
+  &__card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin-bottom: 1.75rem;
+    cursor: pointer;
+
+    span {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+  }
+
+  &__logo-icon {
+    width: 2rem;
+    height: 2rem;
+    background: var(--primary);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+
+    svg {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0 0 0.375rem;
+  }
+
+  &__subtitle {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    margin: 0 0 1.5rem;
+  }
+
+  &__error {
+    background: #FEF2F2;
+    color: var(--destructive);
+    border: 1px solid #FECACA;
+    border-radius: var(--radius);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+    margin-bottom: 1rem;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+
+    label {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--foreground);
+    }
+
+    input {
+      padding: 0.5625rem 0.75rem;
+      border: 1px solid var(--input);
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      color: var(--foreground);
+      background: var(--background);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+
+      &:focus {
+        border-color: var(--ring);
+        box-shadow: 0 0 0 2px rgba(25, 120, 158, 0.15);
+      }
+
+      &::placeholder {
+        color: var(--muted-foreground);
+      }
+    }
+  }
+
+  &__submit {
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+
+  &__switch {
+    text-align: center;
+    margin-top: 1.25rem;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+
+    button {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 0.8125rem;
+      font-family: var(--font-sans);
+      padding: 0;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

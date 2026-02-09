@@ -1,6 +1,4 @@
 import {
-  loginIcon,
-  ExcalLogo,
   eyeIcon,
 } from "@excalidraw/excalidraw/components/icons";
 import { MainMenu } from "@excalidraw/excalidraw/index";
@@ -11,9 +9,39 @@ import { isDevEnv } from "@excalidraw/common";
 import type { Theme } from "@excalidraw/element/types";
 
 import { LanguageList } from "../app-language/LanguageList";
-import { isExcalidrawPlusSignedUser } from "../app_constants";
 
 import { saveDebugState } from "./DebugCanvas";
+
+const HomeIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+const CloudIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+  </svg>
+);
 
 export const AppMainMenu: React.FC<{
   onCollabDialogOpen: () => any;
@@ -22,9 +50,37 @@ export const AppMainMenu: React.FC<{
   theme: Theme | "system";
   setTheme: (theme: Theme | "system") => void;
   refresh: () => void;
+  onSaveToCloud?: () => void;
+  isSaving?: boolean;
+  onGoHome?: () => void;
 }> = React.memo((props) => {
   return (
     <MainMenu>
+      {props.onGoHome && (
+        <MainMenu.Item
+          icon={<HomeIcon />}
+          onClick={props.onGoHome}
+        >
+          Home
+        </MainMenu.Item>
+      )}
+      {props.onSaveToCloud && (
+        <MainMenu.Item
+          icon={<CloudIcon />}
+          onClick={props.onSaveToCloud}
+        >
+          {props.isSaving ? "Saving..." : "Save Now"}
+        </MainMenu.Item>
+      )}
+      {props.onGoHome && !props.onSaveToCloud && props.isSaving !== undefined && (
+        <MainMenu.ItemCustom>
+          <div style={{ padding: "0.375rem 0.75rem", fontSize: "0.75rem", color: "#6B7280", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+            <CloudIcon />
+            {props.isSaving ? "Saving..." : "Auto-save on"}
+          </div>
+        </MainMenu.ItemCustom>
+      )}
+      {(props.onGoHome || props.onSaveToCloud) && <MainMenu.Separator />}
       <MainMenu.DefaultItems.LoadScene />
       <MainMenu.DefaultItems.SaveToActiveFile />
       <MainMenu.DefaultItems.Export />
@@ -40,25 +96,6 @@ export const AppMainMenu: React.FC<{
       <MainMenu.DefaultItems.Help />
       <MainMenu.DefaultItems.ClearCanvas />
       <MainMenu.Separator />
-      <MainMenu.ItemLink
-        icon={ExcalLogo}
-        href={`${
-          import.meta.env.VITE_APP_PLUS_LP
-        }/plus?utm_source=excalidraw&utm_medium=app&utm_content=hamburger`}
-        className=""
-      >
-        Excalidraw+
-      </MainMenu.ItemLink>
-      <MainMenu.DefaultItems.Socials />
-      <MainMenu.ItemLink
-        icon={loginIcon}
-        href={`${import.meta.env.VITE_APP_PLUS_APP}${
-          isExcalidrawPlusSignedUser ? "" : "/sign-up"
-        }?utm_source=signin&utm_medium=app&utm_content=hamburger`}
-        className="highlighted"
-      >
-        {isExcalidrawPlusSignedUser ? "Sign in" : "Sign up"}
-      </MainMenu.ItemLink>
       {isDevEnv() && (
         <MainMenu.Item
           icon={eyeIcon}

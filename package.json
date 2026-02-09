@@ -59,7 +59,11 @@
     "build": "npm run build --prefix ./excalidraw-app",
     "build:preview": "npm run build:preview --prefix ./excalidraw-app",
     "start": "npm run start --prefix ./excalidraw-app",
+    "dev": "npm run start --prefix ./excalidraw-app",
+    "collab-server": "node collab-server/server.js",
+    "dev:collab": "concurrently \"npm run dev\" \"npm run collab-server\"",
     "start:production": "npm run start:production --prefix ./excalidraw-app",
+
     "start:example": "npm run build:packages && npm run start --prefix ./examples/with-script-in-browser",
     "test:all": "npm run test:typecheck && npm run test:code && npm run test:other && npm run test:app -- --watch=false",
     "test:app": "vitest",
@@ -91,6 +95,7 @@
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.0",
+    "appwrite": "22.0.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "source-map": "^0.8.0-beta.0",
