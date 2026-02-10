@@ -26,6 +26,9 @@ import {
   resolvablePromise,
   isRunningInIframe,
   isDevEnv,
+  DEFAULT_SIDEBAR,
+  CANVAS_SEARCH_TAB,
+  LIBRARY_SIDEBAR_TAB,
 } from "@excalidraw/common";
 import polyfill from "@excalidraw/excalidraw/polyfill";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -366,6 +369,9 @@ const ExcalidrawWrapper = ({
 
   // Version history state (hooks that use excalidrawAPI are below, after its declaration)
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [vhpDocked, setVhpDocked] = useState(false);
+  // Track which Excalidraw sidebar tab is active (search/library) for button highlighting
+  const [activeSidebarTab, setActiveSidebarTab] = useState<string | null>(null);
   const lastSnapshotTimeRef = useRef<number>(0);
   const lastSnapshotElementsRef = useRef<string>("");
   const snapshotIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -530,7 +536,7 @@ const ExcalidrawWrapper = ({
   // Create a version snapshot (used by auto-interval and before restore)
   // Manual saves call createVersionSnapshot() directly with captured sceneData.
   const createSnapshotIfNeeded = useCallback(
-    async (trigger: "auto" | "restore") => {
+    async (trigger: "auto" | "restore", restoredFromVersionId: string = "", customName: string = "") => {
       if (!excalidrawAPI || !currentDrawing || !onGoHome) {
         return;
       }
@@ -570,6 +576,8 @@ const ExcalidrawWrapper = ({
           currentUser.$id,
           sceneData,
           trigger,
+          restoredFromVersionId,
+          customName,
         );
         lastSnapshotTimeRef.current = Date.now();
         lastSnapshotElementsRef.current = JSON.stringify(elements);
@@ -614,12 +622,12 @@ const ExcalidrawWrapper = ({
 
   // Version history restore handler (preview is now modal-based inside the panel)
   const handleVersionRestore = useCallback(
-    async (canvasData: object, snapshotTimestamp: string) => {
+    async (canvasData: object, snapshotTimestamp: string, restoredFromVersionId: string = "", backupName?: string) => {
       if (!excalidrawAPI || !currentDrawing) {
         return;
       }
       // Create a snapshot of current state before restoring
-      await createSnapshotIfNeeded("restore");
+      await createSnapshotIfNeeded("restore", restoredFromVersionId, backupName || "");
 
       // Load restored data
       const scene = canvasData as any;
@@ -1092,6 +1100,12 @@ const ExcalidrawWrapper = ({
       }
     }
 
+    // Track active sidebar tab for button highlighting
+    const currentTab = appState.openSidebar?.name === DEFAULT_SIDEBAR.name
+      ? (appState.openSidebar.tab || null)
+      : null;
+    setActiveSidebarTab(currentTab);
+
     // Render the debug scene if the debug canvas is available
     if (debugCanvasRef.current && excalidrawAPI) {
       debugRenderer(
@@ -1196,6 +1210,56 @@ const ExcalidrawWrapper = ({
     }
   }, [excalidrawAPI, isSaving, currentDrawing, cloudFolderId, clearLocalStorageBackup]);
 
+  // Toggle search sidebar — always close VHP when opening
+  const toggleSearchSidebar = useCallback(() => {
+    if (!excalidrawAPI) return;
+    const appState = excalidrawAPI.getAppState();
+    const isSearchOpen = appState.openSidebar?.name === DEFAULT_SIDEBAR.name
+      && appState.openSidebar?.tab === CANVAS_SEARCH_TAB;
+    if (isSearchOpen) {
+      excalidrawAPI.toggleSidebar({ name: DEFAULT_SIDEBAR.name, tab: CANVAS_SEARCH_TAB });
+    } else {
+      // Always close VHP when opening search
+      if (showVersionHistory) {
+        setShowVersionHistory(false);
+        setVhpDocked(false);
+      }
+      excalidrawAPI.toggleSidebar({ name: DEFAULT_SIDEBAR.name, tab: CANVAS_SEARCH_TAB, force: true });
+    }
+  }, [excalidrawAPI, showVersionHistory]);
+
+  // Toggle library sidebar — always close VHP when opening
+  const toggleLibrarySidebar = useCallback(() => {
+    if (!excalidrawAPI) return;
+    const appState = excalidrawAPI.getAppState();
+    const isLibraryOpen = appState.openSidebar?.name === DEFAULT_SIDEBAR.name
+      && appState.openSidebar?.tab === LIBRARY_SIDEBAR_TAB;
+    if (isLibraryOpen) {
+      excalidrawAPI.toggleSidebar({ name: DEFAULT_SIDEBAR.name, tab: LIBRARY_SIDEBAR_TAB });
+    } else {
+      // Always close VHP when opening library
+      if (showVersionHistory) {
+        setShowVersionHistory(false);
+        setVhpDocked(false);
+      }
+      excalidrawAPI.toggleSidebar({ name: DEFAULT_SIDEBAR.name, tab: LIBRARY_SIDEBAR_TAB, force: true });
+    }
+  }, [excalidrawAPI, showVersionHistory]);
+
+  // Toggle VHP — always close the default sidebar when opening
+  const toggleVersionHistory = useCallback(() => {
+    setShowVersionHistory((prev) => {
+      if (!prev && excalidrawAPI) {
+        // Always close the default sidebar when opening VHP
+        const appState = excalidrawAPI.getAppState();
+        if (appState.openSidebar?.name === DEFAULT_SIDEBAR.name) {
+          excalidrawAPI.toggleSidebar({ name: DEFAULT_SIDEBAR.name, force: false });
+        }
+      }
+      return !prev;
+    });
+  }, [excalidrawAPI]);
+
   // browsers generally prevent infinite self-embedding, there are
   // cases where it still happens, and while we disallow self-embedding
   // by not whitelisting our own origin, this serves as an additional guard
@@ -1217,11 +1281,12 @@ const ExcalidrawWrapper = ({
 
   return (
     <div
-      style={{ height: "100%" }}
+      style={{ height: "100%", display: "flex" }}
       className={clsx("excalidraw-app", {
         "is-collaborating": isCollaborating,
       })}
     >
+      <div style={{ flex: 1, minWidth: 0, height: "100%", position: "relative" }}>
       <Excalidraw
         excalidrawAPI={excalidrawRefCallback}
         onChange={onChange}
@@ -1309,7 +1374,7 @@ const ExcalidrawWrapper = ({
                   e.currentTarget.style.transform = "scale(1)";
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                   <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
                 </svg>
                 <span
@@ -1359,7 +1424,7 @@ const ExcalidrawWrapper = ({
               }}
             >
               {/* Bookmark/save icon */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
               </svg>
             </button>
@@ -1369,7 +1434,7 @@ const ExcalidrawWrapper = ({
           const versionHistoryButton = currentDrawing && onGoHome ? (
             <button
               title="Version history (Ctrl+H)"
-              onClick={() => setShowVersionHistory((prev) => !prev)}
+              onClick={toggleVersionHistory}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -1377,10 +1442,10 @@ const ExcalidrawWrapper = ({
                 width: 36,
                 height: 36,
                 borderRadius: 8,
-                border: `1px solid ${showVersionHistory ? "#2563eb" : "var(--color-border-outline-variant, #d1d5db)"}`,
-                background: showVersionHistory ? "#eff6ff" : "var(--island-bg-color, #ffffff)",
+                border: `1px solid ${showVersionHistory ? "#19789E" : "var(--color-border-outline-variant, #d1d5db)"}`,
+                background: showVersionHistory ? "#E0F4F8" : "var(--island-bg-color, #ffffff)",
                 cursor: "pointer",
-                color: showVersionHistory ? "#2563eb" : "var(--icon-fill-color, #1b1b1e)",
+                color: showVersionHistory ? "#19789E" : "var(--icon-fill-color, #1b1b1e)",
                 transition: "all 0.15s ease",
                 padding: 0,
                 flexShrink: 0,
@@ -1397,12 +1462,92 @@ const ExcalidrawWrapper = ({
               }}
             >
               {/* Clock/history icon */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
             </button>
           ) : null;
+
+          // Search in canvas button
+          const isSearchActive = activeSidebarTab === CANVAS_SEARCH_TAB;
+          const searchButton = (
+            <button
+              title="Search in canvas (Ctrl+F)"
+              onClick={toggleSearchSidebar}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                border: `1px solid ${isSearchActive ? "#19789E" : "var(--color-border-outline-variant, #d1d5db)"}`,
+                background: isSearchActive ? "#E0F4F8" : "var(--island-bg-color, #ffffff)",
+                cursor: "pointer",
+                color: isSearchActive ? "#19789E" : "var(--icon-fill-color, #1b1b1e)",
+                transition: "all 0.15s ease",
+                padding: 0,
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                if (!isSearchActive) {
+                  e.currentTarget.style.background = "var(--button-hover-bg, #f3f4f6)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSearchActive) {
+                  e.currentTarget.style.background = "var(--island-bg-color, #ffffff)";
+                }
+              }}
+            >
+              {/* Search/magnifying glass icon */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          );
+
+          // Library button
+          const isLibraryActive = activeSidebarTab === LIBRARY_SIDEBAR_TAB;
+          const libraryButton = (
+            <button
+              title="Library"
+              onClick={toggleLibrarySidebar}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                border: `1px solid ${isLibraryActive ? "#19789E" : "var(--color-border-outline-variant, #d1d5db)"}`,
+                background: isLibraryActive ? "#E0F4F8" : "var(--island-bg-color, #ffffff)",
+                cursor: "pointer",
+                color: isLibraryActive ? "#19789E" : "var(--icon-fill-color, #1b1b1e)",
+                transition: "all 0.15s ease",
+                padding: 0,
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => {
+                if (!isLibraryActive) {
+                  e.currentTarget.style.background = "var(--button-hover-bg, #f3f4f6)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isLibraryActive) {
+                  e.currentTarget.style.background = "var(--island-bg-color, #ffffff)";
+                }
+              }}
+            >
+              {/* Library/book icon */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+            </button>
+          );
 
           if (isMobile) {
             return (
@@ -1416,6 +1561,8 @@ const ExcalidrawWrapper = ({
           return (
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               {saveStatusDot}
+              {searchButton}
+              {libraryButton}
               {versionHistoryButton}
               {saveButton}
               {collabError.message && <CollabError collabError={collabError} />}
@@ -1440,7 +1587,7 @@ const ExcalidrawWrapper = ({
           isSaving={isSaving}
           onVersionHistory={
             onGoHome && currentDrawing
-              ? () => setShowVersionHistory((prev) => !prev)
+              ? toggleVersionHistory
               : undefined
           }
           onSaveToCloud={onGoHome ? triggerManualSave : undefined}
@@ -1578,12 +1725,14 @@ const ExcalidrawWrapper = ({
           />
         )}
       </Excalidraw>
+      </div>
       {showVersionHistory && currentDrawing && (
         <VersionHistoryPanel
           drawingId={currentDrawing.$id}
           isDark={editorTheme === "dark"}
           onRestore={handleVersionRestore}
-          onClose={() => setShowVersionHistory(false)}
+          onClose={() => { setShowVersionHistory(false); setVhpDocked(false); }}
+          onDockedChange={setVhpDocked}
         />
       )}
       <ToastContainer />

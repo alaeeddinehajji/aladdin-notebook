@@ -361,6 +361,33 @@ export const buildFolderPath = async (
 // Version snapshot operations
 // -----------------------------------------------------------------------------
 
+export const getNextVersionNumber = async (
+  drawingId: string,
+  trigger: "auto" | "manual" | "restore",
+): Promise<number> => {
+  const db = getDatabases();
+  const res = await db.listDocuments(DB_ID, "version_snapshots", [
+    Query.equal("drawingId", drawingId),
+    Query.equal("trigger", trigger),
+    Query.orderDesc("timestamp"),
+    Query.limit(1),
+  ]);
+  
+  const snapshots = res.documents as unknown as VersionSnapshot[];
+  if (snapshots.length === 0) {
+    return 1;
+  }
+  
+  // Extract number from existing version name
+  const latestSnapshot = snapshots[0];
+  const nameMatch = latestSnapshot.customName?.match(/(\d+)$/);
+  if (nameMatch) {
+    return parseInt(nameMatch[1], 10) + 1;
+  }
+  
+  return 1;
+};
+
 export type VersionSnapshot = {
   $id: string;
   drawingId: string;
@@ -370,6 +397,7 @@ export type VersionSnapshot = {
   trigger: string;
   customName: string;
   starred: boolean;
+  restoredFromVersionId: string;
   $createdAt: string;
   $updatedAt: string;
 };
@@ -379,19 +407,40 @@ export const createVersionSnapshot = async (
   userId: string,
   canvasData: object,
   trigger: "auto" | "manual" | "restore" = "auto",
+  restoredFromVersionId: string = "",
+  customName: string = "",
 ): Promise<VersionSnapshot> => {
   const db = getDatabases();
+  
+  // Generate automatic numbered name if customName is not provided
+  let finalCustomName = customName;
+  if (!finalCustomName) {
+    const nextNumber = await getNextVersionNumber(drawingId, trigger);
+    if (trigger === "manual") {
+      finalCustomName = `Session ${nextNumber}`;
+    } else if (trigger === "restore") {
+      finalCustomName = `Restored ${nextNumber}`;
+    } else {
+      finalCustomName = `Auto ${nextNumber}`;
+    }
+  }
+  
+  const data: Record<string, unknown> = {
+    drawingId,
+    userId,
+    timestamp: new Date().toISOString(),
+    canvasData: JSON.stringify(canvasData),
+    trigger,
+    customName: finalCustomName,
+  };
+  if (restoredFromVersionId) {
+    data.restoredFromVersionId = restoredFromVersionId;
+  }
   const doc = await db.createDocument(
     DB_ID,
     "version_snapshots",
     ID.unique(),
-    {
-      drawingId,
-      userId,
-      timestamp: new Date().toISOString(),
-      canvasData: JSON.stringify(canvasData),
-      trigger,
-    },
+    data,
     DOC_PERMISSIONS,
   );
   return doc as unknown as VersionSnapshot;

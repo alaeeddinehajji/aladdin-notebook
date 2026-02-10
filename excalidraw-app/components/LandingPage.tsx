@@ -14,7 +14,7 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
         <div className="landing__nav-inner">
           <div className="landing__nav-brand">
             <div className="landing__logo">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 19l7-7 3 3-7 7-3-3z" />
                 <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
                 <path d="M2 2l7.586 7.586" />
@@ -65,13 +65,13 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
             </div>
             <div className="landing__mockup-body">
               <svg viewBox="0 0 600 340" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="40" y="60" width="180" height="120" rx="12" stroke="#19789E" strokeWidth="2" strokeDasharray="6 4" />
+                <rect x="40" y="60" width="180" height="120" rx="12" stroke="#19789E" strokeWidth="1.5" strokeDasharray="6 4" />
                 <rect x="60" y="80" width="140" height="20" rx="4" fill="#E0F4F8" />
                 <rect x="60" y="110" width="100" height="12" rx="3" fill="#F0F0F1" />
                 <rect x="60" y="130" width="120" height="12" rx="3" fill="#F0F0F1" />
-                <circle cx="380" cy="120" r="60" stroke="#19789E" strokeWidth="2" />
+                <circle cx="380" cy="120" r="60" stroke="#19789E" strokeWidth="1.5" />
                 <line x1="340" y1="80" x2="420" y2="160" stroke="#19789E" strokeWidth="1.5" strokeDasharray="4 3" />
-                <path d="M260 250 Q350 200 440 260" stroke="#6B7280" strokeWidth="2" fill="none" />
+                <path d="M260 250 Q350 200 440 260" stroke="#6B7280" strokeWidth="1.5" fill="none" />
                 <rect x="100" y="230" width="100" height="70" rx="8" fill="#E0F4F8" stroke="#19789E" strokeWidth="1" />
                 <text x="120" y="270" fontSize="11" fill="#19789E" fontFamily="IBM Plex Sans">Notes</text>
                 <circle cx="500" cy="80" r="8" fill="#19789E" opacity="0.3" />
@@ -93,7 +93,7 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
           <div className="landing__features-grid">
             <div className="landing__feature-card">
               <div className="landing__feature-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 19l7-7 3 3-7 7-3-3z" />
                   <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
                   <path d="M2 2l7.586 7.586" />
@@ -105,7 +105,7 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
             </div>
             <div className="landing__feature-card">
               <div className="landing__feature-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
                 </svg>
               </div>
@@ -114,7 +114,7 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
             </div>
             <div className="landing__feature-card">
               <div className="landing__feature-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                 </svg>
               </div>
@@ -123,7 +123,7 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
             </div>
             <div className="landing__feature-card">
               <div className="landing__feature-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -135,7 +135,7 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
             </div>
             <div className="landing__feature-card">
               <div className="landing__feature-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
@@ -145,7 +145,7 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
             </div>
             <div className="landing__feature-card">
               <div className="landing__feature-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
