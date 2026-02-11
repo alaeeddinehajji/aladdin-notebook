@@ -56,6 +56,79 @@ const RE_REDDIT =
 const RE_REDDIT_EMBED =
   /^<blockquote[\s\S]*?\shref=["'](https?:\/\/(?:www\.)?reddit\.com\/[^"']*)/i;
 
+const RE_SPOTIFY =
+  /^(?:https?:\/\/)?(?:open\.)?spotify\.com\/(track|album|playlist|episode|show)\/([a-zA-Z0-9]+)/;
+
+const RE_GOOGLE_MAPS =
+  /^(?:https?:\/\/)?(?:www\.)?google\.com\/maps\/(?:embed|place|d\/|@)/;
+const RE_GOOGLE_MAPS_SHORT =
+  /^(?:https?:\/\/)?maps\.google\.com/;
+const RE_GOOGLE_MAPS_EMBED =
+  /^(?:https?:\/\/)?(?:www\.)?google\.com\/maps\/embed/;
+
+const RE_GOOGLE_DOCS =
+  /^(?:https?:\/\/)?docs\.google\.com\/(document|spreadsheets|presentation|forms)\/d\/([a-zA-Z0-9_-]+)/;
+
+const RE_LOOM =
+  /^(?:https?:\/\/)?(?:www\.)?loom\.com\/(share|embed)\/([a-zA-Z0-9_-]+)/;
+
+const RE_CODEPEN =
+  /^(?:https?:\/\/)?(?:www\.)?codepen\.io\/([a-zA-Z0-9_-]+)\/(?:pen|embed|full)\/([a-zA-Z0-9_-]+)/;
+
+const RE_CODESANDBOX =
+  /^(?:https?:\/\/)?(?:www\.)?codesandbox\.io\/(?:s|embed|p)\/([a-zA-Z0-9_-]+)/;
+
+const RE_MIRO =
+  /^(?:https?:\/\/)?(?:www\.)?miro\.com\/app\/board\/([a-zA-Z0-9_=-]+)/;
+
+const RE_AIRTABLE =
+  /^(?:https?:\/\/)?airtable\.com\/(shr[a-zA-Z0-9]+|embed\/[a-zA-Z0-9_/]+|app[a-zA-Z0-9]+)/;
+
+const RE_NOTION =
+  /^(?:https?:\/\/)?(?:www\.)?notion\.so\//;
+
+const RE_SOUNDCLOUD =
+  /^(?:https?:\/\/)?(?:www\.)?soundcloud\.com\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_-]+)/;
+
+const RE_TWITCH =
+  /^(?:https?:\/\/)?(?:www\.)?twitch\.tv\/(?:videos\/([0-9]+)|([a-zA-Z0-9_]+))/;
+
+const RE_DAILYMOTION =
+  /^(?:https?:\/\/)?(?:www\.)?dailymotion\.com\/video\/([a-zA-Z0-9]+)/;
+
+const RE_TED =
+  /^(?:https?:\/\/)?(?:www\.)?ted\.com\/talks\/([a-zA-Z0-9_]+)/;
+
+const RE_SLIDESHARE =
+  /^(?:https?:\/\/)?(?:www\.)?slideshare\.net\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_-]+)/;
+
+const RE_CANVA =
+  /^(?:https?:\/\/)?(?:www\.)?canva\.com\/design\/([a-zA-Z0-9_-]+)/;
+
+const RE_OBSERVABLE =
+  /^(?:https?:\/\/)?observablehq\.com\//;
+
+const RE_JSFIDDLE =
+  /^(?:https?:\/\/)?(?:www\.)?jsfiddle\.net\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_-]+)/;
+
+const RE_REPLIT =
+  /^(?:https?:\/\/)?(?:www\.)?replit\.com\/(@[a-zA-Z0-9_-]+)\/([a-zA-Z0-9_-]+)/;
+
+const RE_DESMOS =
+  /^(?:https?:\/\/)?(?:www\.)?desmos\.com\/(calculator|geometry)\/([a-zA-Z0-9]+)/;
+
+const RE_GEOGEBRA =
+  /^(?:https?:\/\/)?(?:www\.)?geogebra\.org\/(m|calculator|graphing|geometry|3d)\/([a-zA-Z0-9]+)/;
+
+const RE_WIKIPEDIA =
+  /^(?:https?:\/\/)?([a-z]{2,3})\.wikipedia\.org\/wiki\/([^\s]+)/;
+
+const RE_PITCH =
+  /^(?:https?:\/\/)?(?:www\.)?pitch\.com\/(?:public|embed)\/([a-zA-Z0-9_-]+)/;
+
+const RE_EXCALIDRAW =
+  /^(?:https?:\/\/)?(?:www\.)?excalidraw\.com\//;
+
 const parseYouTubeTimestamp = (url: string): number => {
   let timeParam: string | null | undefined;
 
@@ -86,21 +159,58 @@ const parseYouTubeTimestamp = (url: string): number => {
 };
 
 const ALLOWED_DOMAINS = new Set([
+  // Video
   "youtube.com",
   "youtu.be",
   "vimeo.com",
   "player.vimeo.com",
-  "figma.com",
-  "link.excalidraw.com",
-  "gist.github.com",
+  "twitch.tv",
+  "player.twitch.tv",
+  "dailymotion.com",
+  // Social
   "twitter.com",
   "x.com",
-  "*.simplepdf.eu",
+  "reddit.com",
+  // Design & Whiteboard
+  "figma.com",
+  "miro.com",
+  "canva.com",
+  "pitch.com",
+  "excalidraw.com",
+  "link.excalidraw.com",
+  // Music & Audio
+  "spotify.com",
+  "open.spotify.com",
+  "soundcloud.com",
+  "w.soundcloud.com",
+  // Code
+  "gist.github.com",
+  "codepen.io",
+  "codesandbox.io",
   "stackblitz.com",
   "val.town",
-  "giphy.com",
-  "reddit.com",
+  "jsfiddle.net",
+  "replit.com",
+  "observablehq.com",
+  // Google (only embed-friendly subdomains, NOT google.com itself)
+  "maps.google.com",
+  "docs.google.com",
+  // Productivity & Docs
+  "notion.so",
+  "airtable.com",
   "forms.microsoft.com",
+  // Presentations & Education
+  "ted.com",
+  "slideshare.net",
+  "desmos.com",
+  "geogebra.org",
+  // Media
+  "giphy.com",
+  "loom.com",
+  // Reference
+  "*.wikipedia.org",
+  // PDF
+  "*.simplepdf.eu",
 ]);
 
 const ALLOW_SAME_ORIGIN = new Set([
@@ -115,6 +225,33 @@ const ALLOW_SAME_ORIGIN = new Set([
   "stackblitz.com",
   "reddit.com",
   "forms.microsoft.com",
+  "miro.com",
+  "canva.com",
+  "pitch.com",
+  "excalidraw.com",
+  "link.excalidraw.com",
+  "spotify.com",
+  "open.spotify.com",
+  "codepen.io",
+  "codesandbox.io",
+  "jsfiddle.net",
+  "replit.com",
+  "observablehq.com",
+  "maps.google.com",
+  "docs.google.com",
+  "notion.so",
+  "airtable.com",
+  "loom.com",
+  "twitch.tv",
+  "player.twitch.tv",
+  "dailymotion.com",
+  "ted.com",
+  "slideshare.net",
+  "desmos.com",
+  "geogebra.org",
+  "soundcloud.com",
+  "w.soundcloud.com",
+  "*.wikipedia.org",
 ]);
 
 export const createSrcDoc = (body: string) => {
@@ -305,6 +442,311 @@ export const getEmbedLink = (
       sandbox: { allowSameOrigin },
     };
     embeddedLinkCache.set(link, ret);
+    return ret;
+  }
+
+  // Spotify
+  const spotifyMatch = link.match(RE_SPOTIFY);
+  if (spotifyMatch) {
+    const [, spotifyType, spotifyId] = spotifyMatch;
+    const isCompact = spotifyType === "track";
+    link = `https://open.spotify.com/embed/${spotifyType}/${spotifyId}`;
+    aspectRatio = isCompact ? { w: 400, h: 152 } : { w: 400, h: 480 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Google Maps
+  if (RE_GOOGLE_MAPS_EMBED.test(link) || RE_GOOGLE_MAPS.test(link) || RE_GOOGLE_MAPS_SHORT.test(link)) {
+    if (!RE_GOOGLE_MAPS_EMBED.test(link)) {
+      link = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d0!2d0!3d0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2z!5e0!3m2!1sen!2s!4v0&q=${encodeURIComponent(originalLink)}`;
+    }
+    aspectRatio = { w: 600, h: 450 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Google Docs / Sheets / Slides / Forms
+  const googleDocsMatch = link.match(RE_GOOGLE_DOCS);
+  if (googleDocsMatch) {
+    const [, docType, docId] = googleDocsMatch;
+    const typeMap: Record<string, string> = {
+      document: "document",
+      spreadsheets: "spreadsheets",
+      presentation: "presentation",
+      forms: "forms",
+    };
+    const t = typeMap[docType] || docType;
+    if (t === "forms") {
+      link = `https://docs.google.com/${t}/d/e/${docId}/viewform?embedded=true`;
+    } else if (t === "presentation") {
+      link = `https://docs.google.com/${t}/d/${docId}/embed?start=false&loop=false&delayms=3000`;
+    } else {
+      link = `https://docs.google.com/${t}/d/${docId}/preview`;
+    }
+    aspectRatio = t === "presentation" ? { w: 960, h: 569 } : { w: 800, h: 600 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Loom
+  const loomMatch = link.match(RE_LOOM);
+  if (loomMatch) {
+    const [, , loomId] = loomMatch;
+    link = `https://www.loom.com/embed/${loomId}`;
+    type = "video";
+    aspectRatio = { w: 560, h: 315 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type,
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // CodePen
+  const codepenMatch = link.match(RE_CODEPEN);
+  if (codepenMatch) {
+    const [, cpUser, cpPen] = codepenMatch;
+    link = `https://codepen.io/${cpUser}/embed/${cpPen}?default-tab=result`;
+    aspectRatio = { w: 560, h: 400 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // CodeSandbox
+  const csMatch = link.match(RE_CODESANDBOX);
+  if (csMatch) {
+    const [, csId] = csMatch;
+    link = `https://codesandbox.io/embed/${csId}`;
+    aspectRatio = { w: 560, h: 400 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Miro
+  const miroMatch = link.match(RE_MIRO);
+  if (miroMatch) {
+    const [, boardId] = miroMatch;
+    link = `https://miro.com/app/live-embed/${boardId}/`;
+    aspectRatio = { w: 768, h: 432 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Airtable
+  if (RE_AIRTABLE.test(link)) {
+    if (!link.includes("/embed/")) {
+      link = link.replace("airtable.com/", "airtable.com/embed/");
+    }
+    aspectRatio = { w: 700, h: 533 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // SoundCloud
+  if (RE_SOUNDCLOUD.test(link)) {
+    link = `https://w.soundcloud.com/player/?url=${encodeURIComponent(link)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
+    aspectRatio = { w: 560, h: 300 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Twitch
+  const twitchMatch = link.match(RE_TWITCH);
+  if (twitchMatch) {
+    const parentDomain = typeof window !== "undefined" ? window.location.hostname : "localhost";
+    if (twitchMatch[1]) {
+      link = `https://player.twitch.tv/?video=${twitchMatch[1]}&parent=${parentDomain}`;
+    } else if (twitchMatch[2]) {
+      link = `https://player.twitch.tv/?channel=${twitchMatch[2]}&parent=${parentDomain}`;
+    }
+    type = "video";
+    aspectRatio = { w: 560, h: 315 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type,
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Dailymotion
+  const dailymotionMatch = link.match(RE_DAILYMOTION);
+  if (dailymotionMatch) {
+    link = `https://www.dailymotion.com/embed/video/${dailymotionMatch[1]}`;
+    type = "video";
+    aspectRatio = { w: 560, h: 315 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type,
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // TED Talks
+  const tedMatch = link.match(RE_TED);
+  if (tedMatch) {
+    link = `https://embed.ted.com/talks/${tedMatch[1]}`;
+    type = "video";
+    aspectRatio = { w: 560, h: 315 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type,
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Desmos
+  const desmosMatch = link.match(RE_DESMOS);
+  if (desmosMatch) {
+    const [, desmosType, desmosId] = desmosMatch;
+    link = `https://www.desmos.com/${desmosType}/${desmosId}?embed`;
+    aspectRatio = { w: 600, h: 400 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // GeoGebra
+  const geogebraMatch = link.match(RE_GEOGEBRA);
+  if (geogebraMatch) {
+    const [, geoType, geoId] = geogebraMatch;
+    if (geoType === "m") {
+      link = `https://www.geogebra.org/material/iframe/id/${geoId}`;
+    }
+    aspectRatio = { w: 800, h: 600 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // JSFiddle
+  const jsfiddleMatch = link.match(RE_JSFIDDLE);
+  if (jsfiddleMatch) {
+    link = `https://jsfiddle.net/${jsfiddleMatch[1]}/${jsfiddleMatch[2]}/embedded/result/`;
+    aspectRatio = { w: 560, h: 400 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Replit
+  const replitMatch = link.match(RE_REPLIT);
+  if (replitMatch) {
+    link = `https://replit.com/${replitMatch[1]}/${replitMatch[2]}?embed=true`;
+    aspectRatio = { w: 600, h: 400 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Wikipedia
+  const wikiMatch = link.match(RE_WIKIPEDIA);
+  if (wikiMatch) {
+    const [, lang, article] = wikiMatch;
+    link = `https://${lang}.m.wikipedia.org/wiki/${article}`;
+    aspectRatio = { w: 600, h: 500 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin: false },
+    };
+    embeddedLinkCache.set(originalLink, ret);
+    return ret;
+  }
+
+  // Pitch
+  const pitchMatch = link.match(RE_PITCH);
+  if (pitchMatch) {
+    link = `https://pitch.com/embed/${pitchMatch[1]}`;
+    aspectRatio = { w: 960, h: 569 };
+    const ret: IframeDataWithSandbox = {
+      link,
+      intrinsicSize: aspectRatio,
+      type: "generic",
+      sandbox: { allowSameOrigin },
+    };
+    embeddedLinkCache.set(originalLink, ret);
     return ret;
   }
 

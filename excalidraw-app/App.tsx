@@ -1304,6 +1304,17 @@ const ExcalidrawWrapper = ({
         handleKeyboardGlobally={true}
         autoFocus={true}
         theme={editorTheme}
+        validateEmbeddable={(url) => {
+          try {
+            const { protocol } = new URL(url);
+            if (protocol === "https:" || protocol === "http:") {
+              return true;
+            }
+          } catch {
+            // invalid URL
+          }
+          return undefined;
+        }}
         renderTopRightUI={(isMobile) => {
           // Save status indicator
           const saveStatusDot = currentDrawing && onGoHome ? (() => {
