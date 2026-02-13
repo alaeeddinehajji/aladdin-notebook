@@ -12,6 +12,7 @@ import {
 } from "./data/drawingStorage";
 import { getCurrentUser, isLoggedIn, logout } from "./data/authService";
 import { AdminPanel } from "./components/admin/AdminPanel";
+import { StatusPage } from "./components/StatusPage";
 import { trackActivity } from "./data/telemetry";
 
 import type { DrawingDocument } from "./data/drawingStorage";
@@ -35,7 +36,8 @@ type Route =
       initialData?: object;
     }
   | { type: "collab" }
-  | { type: "admin"; subPage: string };
+  | { type: "admin"; subPage: string }
+  | { type: "status" };
 
 // ---------------------------------------------------------------------------
 // URL helpers
@@ -71,6 +73,11 @@ const parseRoute = (): Route => {
   // Collaboration links use hash: #room=... (no auth required)
   if (hash.startsWith("#room=")) {
     return { type: "collab" };
+  }
+
+  // Status page (public)
+  if (path === "/status" || path === "/status/") {
+    return { type: "status" };
   }
 
   // Admin routes
@@ -395,6 +402,11 @@ export const AppRouter = () => {
     case "collab":
       return (
         <ExcalidrawApp key="collab" />
+      );
+
+    case "status":
+      return (
+        <StatusPage onBackToApp={() => navigateTo("/")} />
       );
 
     case "admin": {

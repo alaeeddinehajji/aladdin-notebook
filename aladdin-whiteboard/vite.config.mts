@@ -79,6 +79,12 @@ export default defineConfig(({ mode }) => {
         },
       ],
     },
+    // Prevent esbuild from mangling class/function names in production.
+    // The Appwrite SDK uses BigNumber.isBigNumber() which breaks when
+    // esbuild renames the BigNumber class during minification.
+    esbuild: {
+      keepNames: true,
+    },
     build: {
       outDir: "build",
       rollupOptions: {
