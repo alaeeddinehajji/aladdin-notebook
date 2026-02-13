@@ -1,9 +1,10 @@
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
   background: #f7f7f8;
   color: #1b1b1e;
+  overflow: hidden;
 }
 
 .admin-sidebar {
@@ -14,6 +15,7 @@
   flex-direction: column;
   padding: 1.5rem 0;
   flex-shrink: 0;
+  overflow-y: auto;
 
   &__logo {
     padding: 0 1.25rem 1.5rem;
@@ -105,6 +107,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
 }
 
 .admin-topbar {
@@ -133,6 +136,7 @@
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 // Stats cards
@@ -232,6 +236,22 @@
 
   tr:last-child td {
     border-bottom: none;
+  }
+
+  &__sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+
+    &:hover {
+      background: #f0f0f1;
+      color: #1b1b1e;
+    }
+  }
+
+  &__row--selected td {
+    background: #eff6ff !important;
   }
 }
 
