@@ -18,11 +18,7 @@ export function fixBigNumberPlugin() {
     name: "fix-bignumber",
     enforce,
     transform(code, id) {
-      // Only transform the Appwrite SDK client source
-      if (!id.includes("appwrite") || !id.includes("client")) {
-        return null;
-      }
-
+      // Only patch files that actually use BigNumber.isBigNumber
       if (!code.includes("BigNumber.isBigNumber")) {
         return null;
       }

@@ -1,5 +1,6 @@
 import { Client, Databases, ID, Query, Permission, Role } from "appwrite";
 import { trackActivity } from "./telemetry";
+import { dbg } from "./debug";
 
 export type User = {
   $id: string;
@@ -47,73 +48,91 @@ export const register = async (
   password: string,
   name: string,
 ): Promise<User> => {
-  const db = getDatabases();
+  dbg.log("register: starting", { email, name });
+  try {
+    const db = getDatabases();
 
-  // Check if email already exists
-  const existing = await db.listDocuments(DB_ID, "users", [
-    Query.equal("email", email),
-  ]);
-  if (existing.documents.length > 0) {
-    throw new Error("An account with this email already exists");
+    // Check if email already exists
+    dbg.log("register: checking existing email");
+    const existing = await db.listDocuments(DB_ID, "users", [
+      Query.equal("email", email),
+    ]);
+    if (existing.documents.length > 0) {
+      throw new Error("An account with this email already exists");
+    }
+
+    const hashed = await hashPassword(password);
+    dbg.log("register: creating user document");
+    const doc = await db.createDocument(DB_ID, "users", ID.unique(), {
+      email,
+      password: hashed,
+      name,
+    }, [
+      Permission.read(Role.any()),
+      Permission.update(Role.any()),
+      Permission.delete(Role.any()),
+    ]);
+
+    const user: User = { $id: doc.$id, email, name, role: doc.role || "user" };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    dbg.log("register: success", { userId: doc.$id });
+    trackActivity("register", {
+      resourceType: "user",
+      resourceId: doc.$id,
+      method: "POST",
+      success: true,
+    });
+    return user;
+  } catch (err) {
+    dbg.trace("register failed", err);
+    throw err;
   }
-
-  const hashed = await hashPassword(password);
-  const doc = await db.createDocument(DB_ID, "users", ID.unique(), {
-    email,
-    password: hashed,
-    name,
-  }, [
-    Permission.read(Role.any()),
-    Permission.update(Role.any()),
-    Permission.delete(Role.any()),
-  ]);
-
-  const user: User = { $id: doc.$id, email, name, role: doc.role || "user" };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-  trackActivity("register", {
-    resourceType: "user",
-    resourceId: doc.$id,
-    method: "POST",
-    success: true,
-  });
-  return user;
 };
 
 export const login = async (
   email: string,
   password: string,
 ): Promise<User> => {
-  const db = getDatabases();
+  dbg.log("login: starting", { email });
+  try {
+    const db = getDatabases();
 
-  const results = await db.listDocuments(DB_ID, "users", [
-    Query.equal("email", email),
-  ]);
+    dbg.log("login: querying users collection");
+    const results = await db.listDocuments(DB_ID, "users", [
+      Query.equal("email", email),
+    ]);
+    dbg.log("login: query returned", results.documents.length, "documents");
 
-  if (results.documents.length === 0) {
-    throw new Error("Invalid email or password");
+    if (results.documents.length === 0) {
+      throw new Error("Invalid email or password");
+    }
+
+    const userDoc = results.documents[0];
+    const hashed = await hashPassword(password);
+
+    if (userDoc.password !== hashed) {
+      throw new Error("Invalid email or password");
+    }
+
+    const user: User = {
+      $id: userDoc.$id,
+      email: userDoc.email,
+      name: userDoc.name,
+      role: userDoc.role || "user",
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    dbg.log("login: success", { userId: userDoc.$id, role: user.role });
+    trackActivity("login", {
+      resourceType: "user",
+      resourceId: userDoc.$id,
+      method: "POST",
+      success: true,
+    });
+    return user;
+  } catch (err) {
+    dbg.trace("login failed", err);
+    throw err;
   }
-
-  const userDoc = results.documents[0];
-  const hashed = await hashPassword(password);
-
-  if (userDoc.password !== hashed) {
-    throw new Error("Invalid email or password");
-  }
-
-  const user: User = {
-    $id: userDoc.$id,
-    email: userDoc.email,
-    name: userDoc.name,
-    role: userDoc.role || "user",
-  };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-  trackActivity("login", {
-    resourceType: "user",
-    resourceId: userDoc.$id,
-    method: "POST",
-    success: true,
-  });
-  return user;
 };
 
 export const logout = (): void => {

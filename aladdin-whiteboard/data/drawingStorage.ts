@@ -1,5 +1,6 @@
 import { Client, Databases, ID, Query, Permission, Role } from "appwrite";
 import { trackActivity } from "./telemetry";
+import { dbg } from "./debug";
 
 const DOC_PERMISSIONS = [
   Permission.read(Role.any()),
@@ -66,20 +67,27 @@ export const listFolders = async (
   userId: string,
   parentId: string = "",
 ): Promise<FolderDocument[]> => {
-  const db = getDatabases();
-  const queries = [
-    Query.equal("userId", userId),
-    Query.orderAsc("name"),
-    Query.limit(100),
-  ];
-  if (parentId) {
-    queries.push(Query.equal("parentId", parentId));
-  } else {
-    queries.push(Query.equal("parentId", ""));
-  }
+  dbg.log("listFolders: starting", { userId, parentId });
+  try {
+    const db = getDatabases();
+    const queries = [
+      Query.equal("userId", userId),
+      Query.orderAsc("name"),
+      Query.limit(100),
+    ];
+    if (parentId) {
+      queries.push(Query.equal("parentId", parentId));
+    } else {
+      queries.push(Query.equal("parentId", ""));
+    }
 
-  const res = await db.listDocuments(DB_ID, "folders", queries);
-  return res.documents as unknown as FolderDocument[];
+    const res = await db.listDocuments(DB_ID, "folders", queries);
+    dbg.log("listFolders: returned", res.documents.length, "folders");
+    return res.documents as unknown as FolderDocument[];
+  } catch (err) {
+    dbg.trace("listFolders failed", err);
+    throw err;
+  }
 };
 
 export const createFolder = async (
@@ -150,20 +158,27 @@ export const listDrawings = async (
   userId: string,
   folderId: string = "",
 ): Promise<DrawingDocument[]> => {
-  const db = getDatabases();
-  const queries = [
-    Query.equal("userId", userId),
-    Query.orderDesc("lastModified"),
-    Query.limit(100),
-  ];
-  if (folderId) {
-    queries.push(Query.equal("folderId", folderId));
-  } else {
-    queries.push(Query.equal("folderId", ""));
-  }
+  dbg.log("listDrawings: starting", { userId, folderId });
+  try {
+    const db = getDatabases();
+    const queries = [
+      Query.equal("userId", userId),
+      Query.orderDesc("lastModified"),
+      Query.limit(100),
+    ];
+    if (folderId) {
+      queries.push(Query.equal("folderId", folderId));
+    } else {
+      queries.push(Query.equal("folderId", ""));
+    }
 
-  const res = await db.listDocuments(DB_ID, "drawings", queries);
-  return res.documents as unknown as DrawingDocument[];
+    const res = await db.listDocuments(DB_ID, "drawings", queries);
+    dbg.log("listDrawings: returned", res.documents.length, "drawings");
+    return res.documents as unknown as DrawingDocument[];
+  } catch (err) {
+    dbg.trace("listDrawings failed", err);
+    throw err;
+  }
 };
 
 export const getDrawingById = async (

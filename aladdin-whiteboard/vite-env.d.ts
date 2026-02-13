@@ -27,6 +27,10 @@ interface ImportMetaEnv {
   VITE_APP_ENABLE_PWA: string;
 
   VITE_APP_GIT_SHA: string;
+  VITE_APP_GIT_MESSAGE: string;
+
+  // Debug mode — set to "true" to show verbose errors in browser console
+  VITE_APP_DEBUG: string;
 
   // Prevent unload dialog
   VITE_APP_DISABLE_PREVENT_UNLOAD: string;
