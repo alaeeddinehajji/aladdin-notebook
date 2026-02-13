@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Client, Databases, Query } from "appwrite";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -79,220 +78,60 @@ const runChecks = async (): Promise<StatusData> => {
     }
   }
 
-  // 2. Appwrite SDK init
-  let client: Client | null = null;
-  let databases: Databases | null = null;
-  {
+  // Helper: check a collection via raw REST API (avoids Appwrite SDK BigNumber bug)
+  const checkCollection = async (name: string, collectionId: string) => {
     const start = performance.now();
     try {
-      client = new Client().setEndpoint(endpoint).setProject(projectId);
-      databases = new Databases(client);
-      checks.push({
-        name: "Appwrite SDK Init",
-        status: "ok",
-        latency: Math.round(performance.now() - start),
-        message: "Client and Databases initialized",
+      const url = `${endpoint}/databases/${dbId}/collections/${collectionId}/documents?queries[]=${encodeURIComponent(JSON.stringify({ method: "limit", values: [1] }))}`;
+      const res = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Appwrite-Project": projectId,
+        },
+        signal: AbortSignal.timeout(10000),
       });
+      const latency = Math.round(performance.now() - start);
+      if (res.ok) {
+        const json = await res.json();
+        checks.push({
+          name,
+          status: "ok",
+          latency,
+          message: `Readable (${json.total} total documents)`,
+        });
+      } else {
+        const text = await res.text().catch(() => "");
+        let msg = `HTTP ${res.status}`;
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed.message) msg = parsed.message;
+        } catch { /* use default */ }
+        checks.push({ name, status: "error", latency, message: msg });
+      }
     } catch (err: any) {
       checks.push({
-        name: "Appwrite SDK Init",
+        name,
         status: "error",
         latency: Math.round(performance.now() - start),
-        message: err?.message || "Failed to init SDK",
+        message: err?.message || "Network error",
       });
     }
-  }
+  };
 
-  // 3. Database read — users collection (count only, no sensitive data)
-  if (databases) {
-    const start = performance.now();
-    try {
-      const res = await databases.listDocuments(dbId, "users", [
-        Query.limit(1),
-        Query.select(["$id"]),
-      ]);
-      checks.push({
-        name: "Database: Users Collection",
-        status: "ok",
-        latency: Math.round(performance.now() - start),
-        message: `Readable (${res.total} total documents)`,
-      });
-    } catch (err: any) {
-      checks.push({
-        name: "Database: Users Collection",
-        status: "error",
-        latency: Math.round(performance.now() - start),
-        message: err?.message || "Failed to query users",
-      });
-    }
-  }
+  // 2. Check all collections via raw REST (no SDK, no BigNumber)
+  const collections = [
+    ["Database: Users Collection", "users"],
+    ["Database: Drawings Collection", "drawings"],
+    ["Database: Folders Collection", "folders"],
+    ["Database: Drawing Data Collection", "drawing_data"],
+    ["Database: Error Logs Collection", "error_logs"],
+    ["Database: Activity Logs Collection", "activity_logs"],
+    ["Database: Scenes Collection", "scenes"],
+    ["Database: Version Snapshots Collection", "version_snapshots"],
+  ];
 
-  // 4. Database read — drawings collection
-  if (databases) {
-    const start = performance.now();
-    try {
-      const res = await databases.listDocuments(dbId, "drawings", [
-        Query.limit(1),
-        Query.select(["$id"]),
-      ]);
-      checks.push({
-        name: "Database: Drawings Collection",
-        status: "ok",
-        latency: Math.round(performance.now() - start),
-        message: `Readable (${res.total} total documents)`,
-      });
-    } catch (err: any) {
-      checks.push({
-        name: "Database: Drawings Collection",
-        status: "error",
-        latency: Math.round(performance.now() - start),
-        message: err?.message || "Failed to query drawings",
-      });
-    }
-  }
-
-  // 5. Database read — folders collection
-  if (databases) {
-    const start = performance.now();
-    try {
-      const res = await databases.listDocuments(dbId, "folders", [
-        Query.limit(1),
-        Query.select(["$id"]),
-      ]);
-      checks.push({
-        name: "Database: Folders Collection",
-        status: "ok",
-        latency: Math.round(performance.now() - start),
-        message: `Readable (${res.total} total documents)`,
-      });
-    } catch (err: any) {
-      checks.push({
-        name: "Database: Folders Collection",
-        status: "error",
-        latency: Math.round(performance.now() - start),
-        message: err?.message || "Failed to query folders",
-      });
-    }
-  }
-
-  // 6. Database read — drawing_data collection
-  if (databases) {
-    const start = performance.now();
-    try {
-      const res = await databases.listDocuments(dbId, "drawing_data", [
-        Query.limit(1),
-        Query.select(["$id"]),
-      ]);
-      checks.push({
-        name: "Database: Drawing Data Collection",
-        status: "ok",
-        latency: Math.round(performance.now() - start),
-        message: `Readable (${res.total} total documents)`,
-      });
-    } catch (err: any) {
-      checks.push({
-        name: "Database: Drawing Data Collection",
-        status: "error",
-        latency: Math.round(performance.now() - start),
-        message: err?.message || "Failed to query drawing_data",
-      });
-    }
-  }
-
-  // 7. Database read — error_logs collection
-  if (databases) {
-    const start = performance.now();
-    try {
-      const res = await databases.listDocuments(dbId, "error_logs", [
-        Query.limit(1),
-        Query.select(["$id"]),
-      ]);
-      checks.push({
-        name: "Database: Error Logs Collection",
-        status: "ok",
-        latency: Math.round(performance.now() - start),
-        message: `Readable (${res.total} total documents)`,
-      });
-    } catch (err: any) {
-      checks.push({
-        name: "Database: Error Logs Collection",
-        status: "error",
-        latency: Math.round(performance.now() - start),
-        message: err?.message || "Failed to query error_logs",
-      });
-    }
-  }
-
-  // 8. Database read — activity_logs collection
-  if (databases) {
-    const start = performance.now();
-    try {
-      const res = await databases.listDocuments(dbId, "activity_logs", [
-        Query.limit(1),
-        Query.select(["$id"]),
-      ]);
-      checks.push({
-        name: "Database: Activity Logs Collection",
-        status: "ok",
-        latency: Math.round(performance.now() - start),
-        message: `Readable (${res.total} total documents)`,
-      });
-    } catch (err: any) {
-      checks.push({
-        name: "Database: Activity Logs Collection",
-        status: "error",
-        latency: Math.round(performance.now() - start),
-        message: err?.message || "Failed to query activity_logs",
-      });
-    }
-  }
-
-  // 9. Database read — scenes collection
-  if (databases) {
-    const start = performance.now();
-    try {
-      const res = await databases.listDocuments(dbId, "scenes", [
-        Query.limit(1),
-        Query.select(["$id"]),
-      ]);
-      checks.push({
-        name: "Database: Scenes Collection",
-        status: "ok",
-        latency: Math.round(performance.now() - start),
-        message: `Readable (${res.total} total documents)`,
-      });
-    } catch (err: any) {
-      checks.push({
-        name: "Database: Scenes Collection",
-        status: "error",
-        latency: Math.round(performance.now() - start),
-        message: err?.message || "Failed to query scenes",
-      });
-    }
-  }
-
-  // 10. Database read — version_snapshots collection
-  if (databases) {
-    const start = performance.now();
-    try {
-      const res = await databases.listDocuments(dbId, "version_snapshots", [
-        Query.limit(1),
-        Query.select(["$id"]),
-      ]);
-      checks.push({
-        name: "Database: Version Snapshots Collection",
-        status: "ok",
-        latency: Math.round(performance.now() - start),
-        message: `Readable (${res.total} total documents)`,
-      });
-    } catch (err: any) {
-      checks.push({
-        name: "Database: Version Snapshots Collection",
-        status: "error",
-        latency: Math.round(performance.now() - start),
-        message: err?.message || "Failed to query version_snapshots",
-      });
-    }
+  for (const [name, id] of collections) {
+    await checkCollection(name, id);
   }
 
   // 11. LocalStorage available
@@ -370,15 +209,18 @@ const runChecks = async (): Promise<StatusData> => {
 
 const styles = {
   page: {
-    minHeight: "100vh",
+    height: "100vh",
+    overflowY: "auto",
     background: "#0f1117",
     color: "#e4e4e7",
     fontFamily: "'IBM Plex Mono', 'Cascadia Code', 'Fira Code', monospace",
     padding: "2rem",
+    boxSizing: "border-box",
   } as React.CSSProperties,
   container: {
     maxWidth: 800,
     margin: "0 auto",
+    paddingBottom: "3rem",
   } as React.CSSProperties,
   header: {
     display: "flex",
