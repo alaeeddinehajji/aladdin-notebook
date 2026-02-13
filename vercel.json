@@ -92,5 +92,6 @@
     }
   ],
   "outputDirectory": "aladdin-whiteboard/build",
-  "installCommand": "yarn install"
+  "installCommand": "npm install",
+  "buildCommand": "npm run build --prefix ./aladdin-whiteboard"
 }
