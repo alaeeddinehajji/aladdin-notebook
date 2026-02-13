@@ -34,6 +34,7 @@ type StatusData = {
     cookies: string;
   };
   buildVersion: string;
+  commitLabel: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -198,6 +199,9 @@ const runChecks = async (): Promise<StatusData> => {
     "$1/...",
   );
 
+  const fullSha = import.meta.env.VITE_APP_GIT_SHA || "dev";
+  const shortSha = fullSha ? fullSha.slice(0, 7) : "dev";
+
   return {
     timestamp: new Date().toISOString(),
     environment: import.meta.env.MODE || "unknown",
@@ -213,7 +217,8 @@ const runChecks = async (): Promise<StatusData> => {
     clientControls: {
       cookies: document.cookie || "(none)",
     },
-    buildVersion: import.meta.env.VITE_APP_GIT_SHA || "dev",
+    buildVersion: fullSha,
+    commitLabel: shortSha,
   };
 };
 
@@ -566,6 +571,7 @@ export const StatusPage = ({ onBackToApp }: { onBackToApp: () => void }) => {
           <span>Checked: {new Date(data.timestamp).toLocaleString()}</span>
           <span>Environment: {data.environment}</span>
           <span>Build: {data.buildVersion}</span>
+          <span>Commit: {data.commitLabel}</span>
           <span>
             Passed: {data.summary.passed}/{data.summary.total}
           </span>

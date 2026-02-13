@@ -78,6 +78,10 @@ export default defineConfig(({ mode }) => {
           replacement: path.resolve(__dirname, "../packages/utils/src/$1"),
         },
       ],
+      // Ensure only one copy of bignumber.js exists in the bundle.
+      // The Appwrite SDK's BigNumber.isBigNumber() fails when multiple
+      // copies exist across chunks (different prototypes).
+      dedupe: ["bignumber.js", "json-bigint"],
     },
     // Prevent esbuild from mangling class/function names in production.
     // The Appwrite SDK uses BigNumber.isBigNumber() which breaks when
@@ -113,6 +117,16 @@ export default defineConfig(({ mode }) => {
 
             if (id.includes("@excalidraw/mermaid-to-excalidraw")) {
               return "mermaid-to-excalidraw";
+            }
+
+            // Keep Appwrite SDK + BigNumber in one chunk so
+            // BigNumber.isBigNumber() identity checks work.
+            if (
+              id.includes("node_modules/appwrite") ||
+              id.includes("node_modules/bignumber.js") ||
+              id.includes("node_modules/json-bigint")
+            ) {
+              return "appwrite";
             }
           },
         },
