@@ -33,6 +33,7 @@ type StatusData = {
   clientControls: {
     cookies: string;
   };
+  buildVersion: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -58,6 +59,7 @@ const runChecks = async (): Promise<StatusData> => {
       try {
         const res = await fetch(`${endpoint}${path}`, {
           method: "GET",
+          headers: { "X-Appwrite-Project": projectId },
           signal: AbortSignal.timeout(8000),
         });
         const latency = Math.round(performance.now() - start);
@@ -211,6 +213,7 @@ const runChecks = async (): Promise<StatusData> => {
     clientControls: {
       cookies: document.cookie || "(none)",
     },
+    buildVersion: import.meta.env.VITE_APP_GIT_SHA || "dev",
   };
 };
 
@@ -562,6 +565,7 @@ export const StatusPage = ({ onBackToApp }: { onBackToApp: () => void }) => {
         <div style={styles.meta}>
           <span>Checked: {new Date(data.timestamp).toLocaleString()}</span>
           <span>Environment: {data.environment}</span>
+          <span>Build: {data.buildVersion}</span>
           <span>
             Passed: {data.summary.passed}/{data.summary.total}
           </span>
