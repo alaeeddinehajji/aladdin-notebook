@@ -35,6 +35,7 @@ type StatusData = {
   };
   buildVersion: string;
   commitLabel: string;
+  commitMessage: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -201,6 +202,7 @@ const runChecks = async (): Promise<StatusData> => {
 
   const fullSha = import.meta.env.VITE_APP_GIT_SHA || "dev";
   const shortSha = fullSha ? fullSha.slice(0, 7) : "dev";
+  const commitMessage = import.meta.env.VITE_APP_GIT_MESSAGE || "(unknown)";
 
   return {
     timestamp: new Date().toISOString(),
@@ -219,6 +221,7 @@ const runChecks = async (): Promise<StatusData> => {
     },
     buildVersion: fullSha,
     commitLabel: shortSha,
+    commitMessage,
   };
 };
 
@@ -572,6 +575,7 @@ export const StatusPage = ({ onBackToApp }: { onBackToApp: () => void }) => {
           <span>Environment: {data.environment}</span>
           <span>Build: {data.buildVersion}</span>
           <span>Commit: {data.commitLabel}</span>
+          <span title={data.commitMessage}>Message: {data.commitMessage}</span>
           <span>
             Passed: {data.summary.passed}/{data.summary.total}
           </span>

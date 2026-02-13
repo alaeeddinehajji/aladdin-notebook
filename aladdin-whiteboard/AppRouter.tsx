@@ -206,9 +206,14 @@ export const AppRouter = () => {
   // Track page views
   useEffect(() => {
     if (route.type !== "landing") {
+      const perf = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
       trackActivity("page_view", {
         resourceType: route.type,
         method: "GET",
+        responseTime: perf ? Math.round(perf.responseEnd - perf.requestStart) : 0,
+        responseSize: perf?.transferSize ?? 0,
+        requestSize: perf?.encodedBodySize ?? 0,
+        statusCode: 200,
       });
     }
   }, [route]);
