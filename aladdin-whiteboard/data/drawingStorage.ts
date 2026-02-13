@@ -1,4 +1,5 @@
 import { Client, Databases, ID, Query, Permission, Role } from "appwrite";
+import { trackActivity } from "./telemetry";
 
 const DOC_PERMISSIONS = [
   Permission.read(Role.any()),
@@ -95,6 +96,13 @@ export const createFolder = async (
     color,
     createdAt: new Date().toISOString(),
   }, DOC_PERMISSIONS);
+  trackActivity("create_folder", {
+    resourceType: "folder",
+    resourceId: doc.$id,
+    method: "POST",
+    success: true,
+    metadata: { name, parentId },
+  });
   return doc as unknown as FolderDocument;
 };
 
@@ -112,6 +120,12 @@ export const deleteFolder = async (
     await deleteFolder(userId, sub.$id);
   }
   await db.deleteDocument(DB_ID, "folders", folderId);
+  trackActivity("delete_folder", {
+    resourceType: "folder",
+    resourceId: folderId,
+    method: "DELETE",
+    success: true,
+  });
 };
 
 export const renameFolder = async (
@@ -120,6 +134,13 @@ export const renameFolder = async (
 ): Promise<void> => {
   const db = getDatabases();
   await db.updateDocument(DB_ID, "folders", folderId, { name });
+  trackActivity("rename_folder", {
+    resourceType: "folder",
+    resourceId: folderId,
+    method: "PUT",
+    success: true,
+    metadata: { name },
+  });
 };
 
 // Drawing operations
@@ -208,6 +229,14 @@ export const saveDrawingToCloud = async (
       throw err;
     }
 
+    trackActivity("save_drawing", {
+      resourceType: "drawing",
+      resourceId: existingDrawingId,
+      method: "PUT",
+      requestSize: jsonStr.length,
+      success: true,
+      metadata: { name, folderId },
+    });
     return doc as unknown as DrawingDocument;
   } else {
     // Create new drawing
@@ -226,6 +255,14 @@ export const saveDrawingToCloud = async (
       sceneData: jsonStr,
     }, DOC_PERMISSIONS);
 
+    trackActivity("create_drawing", {
+      resourceType: "drawing",
+      resourceId: drawingDoc.$id,
+      method: "POST",
+      requestSize: jsonStr.length,
+      success: true,
+      metadata: { name, folderId },
+    });
     return drawingDoc as unknown as DrawingDocument;
   }
 };
@@ -248,6 +285,7 @@ export const loadDrawingFromCloud = async (
   return {};
 };
 
+
 export const deleteDrawing = async (
   drawingId: string,
   _storageFileId?: string,
@@ -266,6 +304,12 @@ export const deleteDrawing = async (
     // ignore
   }
   await db.deleteDocument(DB_ID, "drawings", drawingId);
+  trackActivity("delete_drawing", {
+    resourceType: "drawing",
+    resourceId: drawingId,
+    method: "DELETE",
+    success: true,
+  });
 };
 
 export const renameDrawing = async (
@@ -274,6 +318,13 @@ export const renameDrawing = async (
 ): Promise<void> => {
   const db = getDatabases();
   await db.updateDocument(DB_ID, "drawings", drawingId, { name });
+  trackActivity("rename_drawing", {
+    resourceType: "drawing",
+    resourceId: drawingId,
+    method: "PUT",
+    success: true,
+    metadata: { name },
+  });
 };
 
 export const moveDrawing = async (
@@ -282,6 +333,13 @@ export const moveDrawing = async (
 ): Promise<void> => {
   const db = getDatabases();
   await db.updateDocument(DB_ID, "drawings", drawingId, { folderId });
+  trackActivity("move_drawing", {
+    resourceType: "drawing",
+    resourceId: drawingId,
+    method: "PUT",
+    success: true,
+    metadata: { folderId },
+  });
 };
 
 // Folder path resolution

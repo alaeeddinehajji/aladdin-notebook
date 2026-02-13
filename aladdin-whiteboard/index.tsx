@@ -3,6 +3,10 @@ import { createRoot } from "react-dom/client";
 import { registerSW } from "virtual:pwa-register";
 
 import { AppRouter } from "./AppRouter";
+import { initTelemetry } from "./data/telemetry";
+
+// Initialize error tracking & activity logging
+initTelemetry();
 
 // ---------------------------------------------------------------------------
 // Prevent browser page zoom everywhere (Ctrl/Cmd+Wheel and Ctrl/Cmd+±/0).

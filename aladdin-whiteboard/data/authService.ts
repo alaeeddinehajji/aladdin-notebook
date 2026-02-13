@@ -1,9 +1,11 @@
 import { Client, Databases, ID, Query, Permission, Role } from "appwrite";
+import { trackActivity } from "./telemetry";
 
 export type User = {
   $id: string;
   email: string;
   name: string;
+  role: string;
 };
 
 const SESSION_KEY = "aladdin_notes_session";
@@ -66,8 +68,14 @@ export const register = async (
     Permission.delete(Role.any()),
   ]);
 
-  const user: User = { $id: doc.$id, email, name };
+  const user: User = { $id: doc.$id, email, name, role: doc.role || "user" };
   localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  trackActivity("register", {
+    resourceType: "user",
+    resourceId: doc.$id,
+    method: "POST",
+    success: true,
+  });
   return user;
 };
 
@@ -96,12 +104,28 @@ export const login = async (
     $id: userDoc.$id,
     email: userDoc.email,
     name: userDoc.name,
+    role: userDoc.role || "user",
   };
   localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  trackActivity("login", {
+    resourceType: "user",
+    resourceId: userDoc.$id,
+    method: "POST",
+    success: true,
+  });
   return user;
 };
 
 export const logout = (): void => {
+  const user = getCurrentUser();
+  if (user) {
+    trackActivity("logout", {
+      resourceType: "user",
+      resourceId: user.$id,
+      method: "POST",
+      success: true,
+    });
+  }
   localStorage.removeItem(SESSION_KEY);
 };
 
@@ -119,4 +143,14 @@ export const getCurrentUser = (): User | null => {
 
 export const isLoggedIn = (): boolean => {
   return getCurrentUser() !== null;
+};
+
+export const isAdmin = (): boolean => {
+  const user = getCurrentUser();
+  return user?.role === "admin" || user?.role === "owner";
+};
+
+export const isOwner = (): boolean => {
+  const user = getCurrentUser();
+  return user?.role === "owner";
 };

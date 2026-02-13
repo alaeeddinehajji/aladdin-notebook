@@ -11,6 +11,8 @@ import {
   buildFolderPath,
 } from "./data/drawingStorage";
 import { getCurrentUser, isLoggedIn, logout } from "./data/authService";
+import { AdminPanel } from "./components/admin/AdminPanel";
+import { trackActivity } from "./data/telemetry";
 
 import type { DrawingDocument } from "./data/drawingStorage";
 import type { User } from "./data/authService";
@@ -32,7 +34,8 @@ type Route =
       drawing?: DrawingDocument;
       initialData?: object;
     }
-  | { type: "collab" };
+  | { type: "collab" }
+  | { type: "admin"; subPage: string };
 
 // ---------------------------------------------------------------------------
 // URL helpers
@@ -68,6 +71,15 @@ const parseRoute = (): Route => {
   // Collaboration links use hash: #room=... (no auth required)
   if (hash.startsWith("#room=")) {
     return { type: "collab" };
+  }
+
+  // Admin routes
+  if (path === "/admin" || path === "/admin/") {
+    return { type: "admin", subPage: "dashboard" };
+  }
+  if (path.startsWith("/admin/")) {
+    const subPage = path.slice("/admin/".length).replace(/\/$/, "") || "dashboard";
+    return { type: "admin", subPage };
   }
 
   if (path === "/login") {
@@ -177,12 +189,22 @@ export const AppRouter = () => {
   // Auth guard
   useEffect(() => {
     if (
-      (route.type === "notes" || route.type === "editor") &&
+      (route.type === "notes" || route.type === "editor" || route.type === "admin") &&
       !isLoggedIn()
     ) {
       navigateTo("/login");
     }
   }, [route.type]);
+
+  // Track page views
+  useEffect(() => {
+    if (route.type !== "landing") {
+      trackActivity("page_view", {
+        resourceType: route.type,
+        method: "GET",
+      });
+    }
+  }, [route]);
 
   const handleAuthSuccess = useCallback((u: User) => {
     setUser(u);
@@ -374,6 +396,27 @@ export const AppRouter = () => {
       return (
         <ExcalidrawApp key="collab" />
       );
+
+    case "admin": {
+      if (!isLoggedIn()) {
+        navigateTo("/login");
+        return null;
+      }
+      const subPageMap: Record<string, "dashboard" | "users" | "drawings" | "errors" | "activity"> = {
+        dashboard: "dashboard",
+        users: "users",
+        drawings: "drawings",
+        errors: "errors",
+        activity: "activity",
+      };
+      return (
+        <AdminPanel
+          initialPage={subPageMap[route.subPage] ?? "dashboard"}
+          onNavigate={navigateTo}
+          onBackToApp={() => navigateTo("/notes")}
+        />
+      );
+    }
 
     default:
       return null;

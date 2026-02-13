@@ -31,6 +31,9 @@ interface ImportMetaEnv {
   // Prevent unload dialog
   VITE_APP_DISABLE_PREVENT_UNLOAD: string;
 
+  // Admin panel secret PIN
+  VITE_ADMIN_SECRET_PIN: string;
+
   MODE: string;
 
   DEV: string;
