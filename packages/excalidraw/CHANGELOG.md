@@ -919,7 +919,7 @@ define: {
 
 - Regression from #6739 preventing redirect link in view mode [#7120](https://github.com/excalidraw/excalidraw/pull/7120)
 
-- Update links to excalidraw-app [#7072](https://github.com/excalidraw/excalidraw/pull/7072)
+  - Update links to aladdin-whiteboard [#7072](https://github.com/excalidraw/excalidraw/pull/7072)
 
 - Ensure we do not stop laser update prematurely [#7100](https://github.com/excalidraw/excalidraw/pull/7100)
 
@@ -959,7 +959,7 @@ define: {
 
 ### Refactor
 
-- Move excalidraw-app outside src [#6987](https://github.com/excalidraw/excalidraw/pull/6987)
+- Move aladdin-whiteboard outside src [#6987](https://github.com/excalidraw/excalidraw/pull/6987)
 
 ---
 

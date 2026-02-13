@@ -1282,7 +1282,7 @@ const ExcalidrawWrapper = ({
   return (
     <div
       style={{ height: "100%", display: "flex" }}
-      className={clsx("excalidraw-app", {
+      className={clsx("aladdin-whiteboard", {
         "is-collaborating": isCollaborating,
       })}
     >

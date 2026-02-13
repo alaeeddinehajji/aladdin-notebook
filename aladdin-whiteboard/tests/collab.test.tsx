@@ -27,7 +27,7 @@ Object.defineProperty(window, "crypto", {
   },
 });
 
-vi.mock("../../excalidraw-app/data/appwrite.ts", () => {
+vi.mock("../../aladdin-whiteboard/data/appwrite.ts", () => {
   const loadFromAppwrite = async () => null;
   const saveToAppwrite = () => {};
   const isSavedToAppwrite = () => true;

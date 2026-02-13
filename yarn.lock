@@ -3203,9 +3203,9 @@ ajv@^8.9.0:
     json-schema-traverse "^1.0.0"
     require-from-string "^2.0.2"
 
-"aladdin-notes-app@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\excalidraw-app":
+"aladdin-notes-app@file:C:\\Users\\alaee\\Documents\\Projects\\notes\\aladdin-whiteboard":
   version "1.0.0"
-  resolved "file:excalidraw-app"
+  resolved "file:aladdin-whiteboard"
   dependencies:
     "@excalidraw/random-username" "1.0.0"
     i18next-browser-languagedetector "6.1.4"

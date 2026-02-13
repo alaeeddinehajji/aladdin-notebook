@@ -31,6 +31,6 @@
       "@excalidraw/utils/*": ["./packages/utils/src/*"]
     }
   },
-  "include": ["packages", "excalidraw-app"],
+  "include": ["packages", "aladdin-whiteboard"],
   "exclude": ["examples", "dist", "types", "tests"]
 }

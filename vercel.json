@@ -79,6 +79,6 @@
       "destination": "/index.html"
     }
   ],
-  "outputDirectory": "excalidraw-app/build",
+  "outputDirectory": "aladdin-whiteboard/build",
   "installCommand": "yarn install"
 }

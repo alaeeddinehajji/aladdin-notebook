@@ -2,7 +2,7 @@
   "private": true,
   "name": "aladdin-notes",
   "workspaces": [
-    "excalidraw-app",
+    "aladdin-whiteboard",
     "packages/*",
     "examples/*"
   ],
@@ -49,20 +49,20 @@
   "prettier": "@excalidraw/prettier-config",
   "scripts": {
     "build-node": "node ./scripts/build-node.js",
-    "build:app": "npm run build:app --prefix ./excalidraw-app",
+    "build:app": "npm run build:app --prefix ./aladdin-whiteboard",
     "build:common": "npm run build:esm --prefix ./packages/common",
     "build:element": "npm run build:esm --prefix ./packages/element",
     "build:excalidraw": "npm run build:esm --prefix ./packages/excalidraw",
     "build:math": "npm run build:esm --prefix ./packages/math",
     "build:packages": "npm run build:common && npm run build:math && npm run build:element && npm run build:excalidraw",
-    "build:version": "npm run build:version --prefix ./excalidraw-app",
-    "build": "npm run build --prefix ./excalidraw-app",
-    "build:preview": "npm run build:preview --prefix ./excalidraw-app",
-    "start": "npm run start --prefix ./excalidraw-app",
-    "dev": "npm run start --prefix ./excalidraw-app",
+    "build:version": "npm run build:version --prefix ./aladdin-whiteboard",
+    "build": "npm run build --prefix ./aladdin-whiteboard",
+    "build:preview": "npm run build:preview --prefix ./aladdin-whiteboard",
+    "start": "npm run start --prefix ./aladdin-whiteboard",
+    "dev": "npm run start --prefix ./aladdin-whiteboard",
     "collab-server": "node collab-server/server.js",
     "dev:collab": "concurrently \"npm run dev\" \"npm run collab-server\"",
-    "start:production": "npm run start:production --prefix ./excalidraw-app",
+    "start:production": "npm run start:production --prefix ./aladdin-whiteboard",
 
     "start:example": "npm run build:packages && npm run start --prefix ./examples/with-script-in-browser",
     "test:all": "npm run test:typecheck && npm run test:code && npm run test:other && npm run test:app -- --watch=false",
@@ -86,8 +86,8 @@
     "release:test": "node scripts/release.js --tag=test",
     "release:next": "node scripts/release.js --tag=next",
     "release:latest": "node scripts/release.js --tag=latest",
-    "rm:build": "rimraf --glob excalidraw-app/build excalidraw-app/dist excalidraw-app/dev-dist packages/*/dist packages/*/build examples/*/build examples/*/dist",
-    "rm:node_modules": "rimraf --glob node_modules excalidraw-app/node_modules packages/*/node_modules",
+    "rm:build": "rimraf --glob aladdin-whiteboard/build aladdin-whiteboard/dist aladdin-whiteboard/dev-dist packages/*/dist packages/*/build examples/*/build examples/*/dist",
+    "rm:node_modules": "rimraf --glob node_modules aladdin-whiteboard/node_modules packages/*/node_modules",
     "clean-install": "npm run rm:node_modules && npm install"
   },
   "resolutions": {
