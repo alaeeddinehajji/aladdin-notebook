@@ -62,30 +62,15 @@ const runChecks = async (): Promise<StatusData> => {
         });
         const latency = Math.round(performance.now() - start);
 
-        if (res.ok) {
-          checks.push({
-            name: "Appwrite API Reachable",
-            status: "ok",
-            latency,
-            message: `HTTP ${res.status}`,
-          });
-          reported = true;
-          break;
-        }
-
-        if (res.status === 401) {
-          // Public health endpoints on some deployments return 401 without an API key; treat as reachable.
-          checks.push({
-            name: "Appwrite API Reachable",
-            status: "ok",
-            latency,
-            message: "Reachable (401 auth required)",
-          });
-          reported = true;
-          break;
-        }
-
-        // Non-OK and non-401: try next candidate
+        // Any HTTP response means the API is reachable; auth may be required.
+        checks.push({
+          name: "Appwrite API Reachable",
+          status: "ok",
+          latency,
+          message: `HTTP ${res.status} ${res.statusText}`.trim(),
+        });
+        reported = true;
+        break;
       } catch (err) {
         // Try next candidate
       }
