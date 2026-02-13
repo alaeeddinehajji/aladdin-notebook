@@ -30,6 +30,9 @@ type StatusData = {
     adminPinConfigured: boolean;
     pwaEnabled: boolean;
   };
+  clientControls: {
+    cookies: string;
+  };
 };
 
 // ---------------------------------------------------------------------------
@@ -48,32 +51,52 @@ const runChecks = async (): Promise<StatusData> => {
   // 1. Appwrite connectivity
   {
     const start = performance.now();
-    try {
-      const res = await fetch(`${endpoint}/health`, {
-        signal: AbortSignal.timeout(8000),
-      });
-      const latency = Math.round(performance.now() - start);
-      if (res.ok) {
-        checks.push({
-          name: "Appwrite API Reachable",
-          status: "ok",
-          latency,
-          message: `HTTP ${res.status}`,
+    const candidates = ["/health", "/health/version"];
+    let reported = false;
+
+    for (const path of candidates) {
+      try {
+        const res = await fetch(`${endpoint}${path}`, {
+          method: "GET",
+          signal: AbortSignal.timeout(8000),
         });
-      } else {
-        checks.push({
-          name: "Appwrite API Reachable",
-          status: "error",
-          latency,
-          message: `HTTP ${res.status} ${res.statusText}`,
-        });
+        const latency = Math.round(performance.now() - start);
+
+        if (res.ok) {
+          checks.push({
+            name: "Appwrite API Reachable",
+            status: "ok",
+            latency,
+            message: `HTTP ${res.status}`,
+          });
+          reported = true;
+          break;
+        }
+
+        if (res.status === 401) {
+          // Public health endpoints on some deployments return 401 without an API key; treat as reachable.
+          checks.push({
+            name: "Appwrite API Reachable",
+            status: "ok",
+            latency,
+            message: "Reachable (401 auth required)",
+          });
+          reported = true;
+          break;
+        }
+
+        // Non-OK and non-401: try next candidate
+      } catch (err) {
+        // Try next candidate
       }
-    } catch (err: any) {
+    }
+
+    if (!reported) {
       checks.push({
         name: "Appwrite API Reachable",
         status: "error",
         latency: Math.round(performance.now() - start),
-        message: err?.message || "Network error",
+        message: "Failed to reach Appwrite health endpoints",
       });
     }
   }
@@ -199,6 +222,9 @@ const runChecks = async (): Promise<StatusData> => {
       databaseConfigured: !!dbId,
       adminPinConfigured: !!import.meta.env.VITE_ADMIN_SECRET_PIN,
       pwaEnabled: import.meta.env.VITE_APP_ENABLE_PWA === "true",
+    },
+    clientControls: {
+      cookies: document.cookie || "(none)",
     },
   };
 };
@@ -333,6 +359,34 @@ const styles = {
       color: ok ? "#4ade80" : "#f87171",
       fontWeight: 600,
     }) as React.CSSProperties,
+  chipLabel: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "4px 10px",
+    borderRadius: 9999,
+    background: "#11121a",
+    border: "1px solid #1f2230",
+    color: "#9ca3af",
+    fontSize: "0.75rem",
+  } as React.CSSProperties,
+  buttonRow: {
+    display: "flex",
+    flexWrap: "wrap" as const,
+    gap: "0.5rem",
+    padding: "0.75rem 1.25rem",
+    borderBottom: "1px solid #1f2230",
+  } as React.CSSProperties,
+  btnGhost: {
+    padding: "0.5rem 1rem",
+    background: "#1f2230",
+    color: "#e4e4e7",
+    border: "1px solid #2d2d30",
+    borderRadius: 6,
+    fontSize: "0.8125rem",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  } as React.CSSProperties,
   btn: {
     padding: "0.5rem 1rem",
     background: "#19789e",
@@ -382,9 +436,11 @@ const styles = {
 export const StatusPage = ({ onBackToApp }: { onBackToApp: () => void }) => {
   const [data, setData] = useState<StatusData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const run = async () => {
     setLoading(true);
+    setActionMessage(null);
     try {
       const result = await runChecks();
       setData(result);
@@ -398,6 +454,71 @@ export const StatusPage = ({ onBackToApp }: { onBackToApp: () => void }) => {
   useEffect(() => {
     run();
   }, []);
+
+  // Client actions
+
+  const handleClearLocalStorage = () => {
+    try {
+      localStorage.clear();
+      setActionMessage("LocalStorage cleared");
+      run();
+    } catch (err: any) {
+      setActionMessage(err?.message || "Failed to clear LocalStorage");
+    }
+  };
+
+  const handleClearSessionStorage = () => {
+    try {
+      sessionStorage.clear();
+      setActionMessage("SessionStorage cleared");
+      run();
+    } catch (err: any) {
+      setActionMessage(err?.message || "Failed to clear SessionStorage");
+    }
+  };
+
+  const handleRefreshPage = () => {
+    try {
+      window.location.reload();
+    } catch (err: any) {
+      setActionMessage(err?.message || "Failed to refresh");
+    }
+  };
+
+  const handleClearCookies = () => {
+    try {
+      document.cookie
+        .split(";")
+        .map((c) => c.trim())
+        .filter(Boolean)
+        .forEach((cookie) => {
+          const eq = cookie.indexOf("=");
+          const name = eq > -1 ? cookie.slice(0, eq) : cookie;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        });
+      setActionMessage("Cookies cleared");
+      run();
+    } catch (err: any) {
+      setActionMessage(err?.message || "Failed to clear cookies");
+    }
+  };
+
+  const handleClearPWAData = async () => {
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      setActionMessage("PWA data cleared (service workers + caches)");
+      run();
+    } catch (err: any) {
+      setActionMessage(err?.message || "Failed to clear PWA data");
+    }
+  };
 
   if (loading) {
     return (
@@ -561,6 +682,42 @@ export const StatusPage = ({ onBackToApp }: { onBackToApp: () => void }) => {
               {window.screen.width}x{window.screen.height} @{" "}
               {window.devicePixelRatio}x
             </span>
+          </div>
+        </div>
+
+        {/* Client Controls */}
+        <div style={styles.section}>
+          <div style={styles.sectionTitle}>Client Controls</div>
+          <div style={{ ...styles.configRow, alignItems: "flex-start", flexDirection: "column", gap: "0.35rem" }}>
+            <span style={styles.configLabel}>Cookies</span>
+            <span
+              style={{ ...styles.chipLabel, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              title={data.clientControls.cookies}
+            >
+              {data.clientControls.cookies}
+            </span>
+          </div>
+          <div style={styles.buttonRow}>
+            <button style={styles.btnGhost} onClick={handleClearCookies}>
+              Clear Cookies
+            </button>
+            <button style={{ ...styles.btnGhost, background: "#1b2331", borderColor: "#2f3c52" }} onClick={handleClearLocalStorage}>
+              Clear LocalStorage
+            </button>
+            <button style={{ ...styles.btnGhost, background: "#1b2331", borderColor: "#2f3c52" }} onClick={handleClearSessionStorage}>
+              Clear SessionStorage
+            </button>
+          </div>
+          <div style={{ ...styles.buttonRow, borderBottom: "none" }}>
+            <button style={{ ...styles.btnGhost, background: "#2b2440", borderColor: "#3c3258" }} onClick={handleClearPWAData}>
+              PWA: Clear SW + Caches
+            </button>
+            <button style={{ ...styles.btnGhost, background: "#1f2a3d", borderColor: "#30425c" }} onClick={handleRefreshPage}>
+              PWA: Refresh App
+            </button>
+            {actionMessage ? (
+              <span style={{ color: "#9ca3af", fontSize: "0.75rem" }}>{actionMessage}</span>
+            ) : null}
           </div>
         </div>
 
